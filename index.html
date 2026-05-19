@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cut – 12 Wochen</title>
+
+<!-- PWA -->
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cut">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&display=swap" rel="stylesheet">
+<style>
+/* ── REVOLUT DESIGN SYSTEM ── */
+:root {
+  /* Canvas */
+  --canvas-dark:    #000000;
+  --canvas-light:   #ffffff;
+  --surface-soft:   #f4f4f4;
+  --surface-card:   #ffffff;
+  --surface-deep:   #0a0a0a;
+  --surface-elev:   #16181a;
+
+  /* Brand */
+  --primary:        #494fdf;
+  --primary-bright: #4f55f1;
+  --primary-deep:   #3a40c4;
+  --on-primary:     #ffffff;
+
+  /* Text – dark canvas */
+  --on-dark:        #ffffff;
+  --on-dark-mute:   rgba(255,255,255,.72);
+  --on-dark-faint:  rgba(255,255,255,.38);
+
+  /* Text – light canvas */
+  --ink:            #191c1f;
+  --body:           #1f2226;
+  --mute:           #505a63;
+  --stone:          #8d969e;
+  --faint:          #c9c9cd;
+
+  /* Hairlines */
+  --hairline-light:  #e2e2e7;
+  --hairline-dark:   rgba(255,255,255,.12);
+  --hairline-strong: #191c1f;
+
+  /* Semantic accents (illustrations only) */
+  --acc-green:  #00a87e;
+  --acc-red:    #e23b4a;
+  --acc-orange: #ec7e00;
+  --acc-blue:   #376cd5;
+
+  /* Radius tokens */
+  --r-none: 0px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   20px;
+  --r-xl:   28px;
+  --r-full: 9999px;
+
+  /* Spacing */
+  --sp-xs:  6px;
+  --sp-sm:  8px;
+  --sp-md:  14px;
+  --sp-lg:  16px;
+  --sp-xl:  24px;
+  --sp-xxl: 32px;
+}
+
+/* ── RESET & BASE ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  height: 100%;
+  background: var(--canvas-dark);
+  color: var(--on-dark);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.24px;
+}
+::-webkit-scrollbar { width: 0; }
+input, select, textarea, button { font-family: inherit; }
+
+/* ── APP SHELL ── */
+.app { display: flex; flex-direction: column; height: 100dvh; max-width: 480px; margin: 0 auto; }
+.screens { flex: 1; overflow: hidden; position: relative; }
+.scr { position: absolute; inset: 0; overflow-y: auto; display: none; padding-bottom: 80px; }
+.scr.on { display: block; animation: fadeUp .18s ease; }
+.scr::-webkit-scrollbar { width: 0; }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── BOTTOM NAV ── */
+.bnav {
+  flex-shrink: 0;
+  background: var(--canvas-dark);
+  border-top: 1px solid var(--hairline-dark);
+  display: flex;
+  height: 64px;
+  padding: 0 4px;
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+.ni {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; border: none; background: none;
+  color: rgba(255,255,255,.38);
+  font-size: 10px; font-weight: 500; letter-spacing: 0.16px;
+  cursor: pointer; transition: color .15s; border-radius: var(--r-md); padding: 6px 4px;
+}
+.ni.on { color: var(--on-dark); }
+.ni-ic { font-size: 20px; line-height: 1; }
+
+/* ── DISPLAY TYPE (Aeonik Pro → Inter weight 500) ── */
+.disp-xl  { font-size: 48px; font-weight: 500; line-height: 1.0; letter-spacing: -0.48px; }
+.disp-lg  { font-size: 36px; font-weight: 500; line-height: 1.0; letter-spacing: -0.36px; }
+.disp-md  { font-size: 28px; font-weight: 500; line-height: 1.19; letter-spacing: -0.28px; }
+.disp-sm  { font-size: 22px; font-weight: 500; line-height: 1.2; letter-spacing: -0.2px; }
+.head-lg  { font-size: 20px; font-weight: 500; line-height: 1.4; letter-spacing: 0; }
+.head-md  { font-size: 18px; font-weight: 500; line-height: 1.4; letter-spacing: 0; }
+.body-md  { font-size: 16px; font-weight: 400; line-height: 1.5; letter-spacing: 0.24px; }
+.body-sm  { font-size: 14px; font-weight: 400; line-height: 1.43; letter-spacing: 0; }
+.label-md { font-size: 14px; font-weight: 600; line-height: 1.43; letter-spacing: 0.16px; }
+.caption  { font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: 0; }
+
+/* ── LAYOUT HELPERS ── */
+.wrap  { padding: 0 20px; }
+.sh    { padding: 20px 20px 10px; display: flex; align-items: center; justify-content: space-between; }
+.sh-title { font-size: 11px; font-weight: 600; color: var(--on-dark-mute); text-transform: uppercase; letter-spacing: 1.2px; }
+.divider  { height: 1px; background: var(--hairline-dark); margin: 0 20px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface-elev);
+  border-radius: var(--r-lg);
+  padding: var(--sp-xxl);
+  border: none;
+}
+.card + .card { margin-top: 10px; }
+.card-sm { background: var(--surface-elev); border-radius: var(--r-lg); padding: 16px 20px; }
+
+/* ── BUTTONS ── */
+/* button-primary: white pill on dark */
+.btn {
+  display: block; width: 100%;
+  padding: 14px 28px;
+  background: var(--canvas-light);
+  color: var(--canvas-dark);
+  border: none;
+  border-radius: var(--r-full);
+  font-size: 16px; font-weight: 600; letter-spacing: 0.24px;
+  cursor: pointer; margin-top: 10px;
+  transition: background .15s, transform .1s;
+  height: 52px; line-height: 1;
+}
+.btn:active { background: var(--faint); transform: scale(.99); }
+
+/* button-outline-dark: outlined on dark */
+.btn-ghost {
+  display: block; width: 100%;
+  padding: 13px 27px;
+  background: transparent;
+  color: var(--on-dark);
+  border: 1px solid var(--on-dark);
+  border-radius: var(--r-full);
+  font-size: 16px; font-weight: 600; letter-spacing: 0.24px;
+  cursor: pointer; margin-top: 8px;
+  height: 52px; line-height: 1;
+  transition: opacity .15s;
+}
+.btn-ghost:active { opacity: .7; }
+
+/* button-pill-sm */
+.btn-sm {
+  padding: 8px 16px;
+  background: var(--surface-elev);
+  color: var(--on-dark);
+  border: 1px solid var(--hairline-dark);
+  border-radius: var(--r-full);
+  font-size: 14px; font-weight: 600; letter-spacing: 0.16px;
+  cursor: pointer; white-space: nowrap;
+  height: 36px; display: inline-flex; align-items: center;
+  transition: background .15s;
+}
+.btn-sm:hover { background: #1f2226; }
+.btn-sm-primary { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+.btn-sm-outline { background: transparent; color: var(--on-dark); border: 1px solid var(--hairline-dark); }
+
+/* ── INPUTS ── */
+.inp {
+  width: 100%;
+  background: var(--surface-elev);
+  border: 1px solid var(--hairline-dark);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  font-size: 16px; font-weight: 400; letter-spacing: 0.24px;
+  color: var(--on-dark);
+  outline: none;
+  transition: border-color .15s;
+  margin-bottom: 10px;
+  height: 52px;
+}
+.inp:focus { border-color: rgba(255,255,255,.45); }
+.inp::placeholder { color: var(--on-dark-faint); }
+textarea.inp { height: auto; resize: none; line-height: 1.5; }
+.ilbl { font-size: 12px; font-weight: 600; color: var(--on-dark-mute); letter-spacing: 0.16px; margin-bottom: 6px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ── AI BUTTON ── */
+.ai-btn {
+  width: 100%;
+  padding: 13px 20px;
+  background: rgba(73,79,223,.15);
+  color: var(--primary-bright);
+  border: 1px solid rgba(73,79,223,.3);
+  border-radius: var(--r-full);
+  font-size: 14px; font-weight: 600; letter-spacing: 0.16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-bottom: 10px;
+  height: 48px;
+  transition: opacity .15s;
+}
+.ai-btn:disabled { opacity: .35; cursor: not-allowed; }
+.spin {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(79,85,241,.3);
+  border-top-color: var(--primary-bright);
+  border-radius: 50%;
+  animation: sp .7s linear infinite;
+  display: none; flex-shrink: 0;
+}
+.spin.on { display: block; }
+@keyframes sp { to { transform: rotate(360deg); } }
+
+/* ── MACRO PREVIEW ── */
+.mprev { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 10px; }
+.mpbox {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--hairline-dark);
+  border-radius: var(--r-sm);
+  padding: 10px 4px; text-align: center;
+  transition: border-color .25s;
+}
+.mpbox.lit { border-color: rgba(73,79,223,.5); background: rgba(73,79,223,.1); }
+.mpv { font-size: 16px; font-weight: 700; color: var(--on-dark); line-height: 1; letter-spacing: -0.2px; }
+.mpv.em { color: rgba(255,255,255,.2); }
+.mpl { font-size: 9px; font-weight: 600; color: var(--on-dark-mute); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 3px; }
+
+/* ── PROGRESS BAR ── */
+.pbar { height: 3px; background: var(--hairline-dark); border-radius: 2px; overflow: hidden; }
+.pfill { height: 100%; border-radius: 2px; transition: width .5s ease; }
+.pbar.lg { height: 6px; border-radius: 3px; }
+
+/* ── LOG ENTRIES ── */
+.log-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline-dark); }
+.log-item:last-child { border-bottom: none; }
+.log-name { font-size: 15px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0; }
+.log-meta { font-size: 12px; color: var(--on-dark-mute); margin-top: 2px; letter-spacing: 0.16px; }
+.log-kcal { font-size: 18px; font-weight: 600; color: var(--on-dark); flex-shrink: 0; letter-spacing: -0.2px; }
+.log-del { background: none; border: none; color: rgba(255,255,255,.25); font-size: 18px; cursor: pointer; padding: 2px 4px; line-height: 1; flex-shrink: 0; transition: color .15s; }
+.log-del:hover { color: var(--acc-red); }
+.log-total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 6px; border-top: 1px solid var(--hairline-dark); margin-top: 4px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%) translateY(8px);
+  background: var(--surface-elev);
+  color: var(--on-dark);
+  font-size: 14px; font-weight: 600; letter-spacing: 0.16px;
+  padding: 10px 20px;
+  border-radius: var(--r-full);
+  z-index: 999; opacity: 0; transition: all .22s; pointer-events: none; white-space: nowrap;
+  border: 1px solid var(--hairline-dark);
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+.toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── WEIGHT CHART ── */
+.wt-entry { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline-dark); }
+.wt-entry:last-child { border-bottom: none; }
+.wt-date { font-size: 12px; font-weight: 500; color: var(--on-dark-mute); width: 72px; flex-shrink: 0; }
+.wt-val { font-size: 22px; font-weight: 500; flex: 1; letter-spacing: -0.2px; line-height: 1; }
+.wt-diff { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: var(--r-full); flex-shrink: 0; letter-spacing: 0.16px; }
+.wt-dn { background: rgba(0,168,126,.12); color: var(--acc-green); }
+.wt-up { background: rgba(226,59,74,.12); color: var(--acc-red); }
+.wt-eq { background: rgba(255,255,255,.06); color: var(--on-dark-mute); }
+
+/* ── TRAINING ── */
+.upload-zone {
+  border: 1px solid var(--hairline-dark);
+  border-radius: var(--r-lg);
+  padding: 24px 20px;
+  text-align: center; cursor: pointer;
+  transition: border-color .2s;
+  position: relative; overflow: hidden;
+  background: rgba(255,255,255,.02);
+}
+.upload-zone:hover { border-color: rgba(255,255,255,.25); }
+.upload-preview { width: 100%; max-height: 260px; object-fit: contain; border-radius: var(--r-md); display: none; margin-bottom: 12px; }
+.upload-ph { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+/* ── WEEK ROW ── */
+.week-row { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+.wday { text-align: center; }
+.wday-lbl { font-size: 9px; font-weight: 600; color: var(--on-dark-mute); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.wday-cell {
+  aspect-ratio: 1; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+  border: 1px solid var(--hairline-dark);
+  color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.02);
+  transition: all .2s;
+}
+.wday-cell.today { border-color: rgba(255,255,255,.4); color: var(--on-dark); background: rgba(255,255,255,.06); }
+.wday-cell.trained { background: var(--on-dark); border-color: var(--on-dark); color: var(--canvas-dark); }
+.wday-cell.ate { background: rgba(73,79,223,.2); border-color: rgba(73,79,223,.4); color: var(--primary-bright); }
+
+/* ── MODE SWITCH ── */
+.mode-switch { display: flex; gap: 4px; background: rgba(255,255,255,.05); border-radius: var(--r-md); padding: 4px; margin-bottom: 16px; }
+.mode-opt {
+  flex: 1; padding: 9px; border: none; border-radius: var(--r-sm);
+  background: transparent; color: var(--on-dark-mute);
+  font-size: 13px; font-weight: 600; letter-spacing: 0.16px;
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.mode-opt.on { background: var(--surface-elev); color: var(--on-dark); }
+
+/* ── FOTO RESULT BOX ── */
+.foto-result-inner {
+  background: rgba(73,79,223,.08);
+  border: 1px solid rgba(73,79,223,.25);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+
+/* ── AINOTE ── */
+.ainote { font-size: 13px; font-weight: 500; text-align: center; padding: 7px 0; letter-spacing: 0.16px; }
+.ainote.ok  { color: var(--acc-green); }
+.ainote.err { color: var(--acc-red); }
+
+/* ── PLAN MEAL CARD ── */
+.meal-card {
+  background: var(--surface-elev);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 8px;
+  border: 1px solid var(--hairline-dark);
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.meal-card:active { border-color: rgba(255,255,255,.25); }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.24px;
+  padding: 4px 12px; border-radius: var(--r-full);
+}
+.badge-primary { background: var(--primary); color: var(--on-primary); }
+.badge-surface { background: rgba(255,255,255,.08); color: var(--on-dark-mute); }
+.badge-green { background: rgba(0,168,126,.12); color: var(--acc-green); }
+.badge-red { background: rgba(226,59,74,.12); color: var(--acc-red); }
+</style>
+</head>
+<body>
+<div class="app">
+<div class="screens">
+
+<!-- ════ DASHBOARD ════ -->
+<div class="scr on" id="s-dash">
+
+  <!-- Header -->
+  <div style="padding:28px 20px 20px;background:linear-gradient(180deg,rgba(73,79,223,.06) 0%,transparent 100%)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div class="disp-md" style="font-size:11px;color:var(--on-dark-mute);margin-bottom:3px" id="dash-week-lbl">Woche 1 von 12</div>
+        <div class="disp-md" style="font-size:34px;color:var(--on-dark)" id="dash-title">Heute reinhämmern.</div>
+        <div style="font-size:12px;color:var(--on-dark-mute);margin-top:3px" id="dash-date"></div>
+      </div>
+    </div>
+
+    <!-- Fortschrittsbalken 12 Wochen -->
+    <div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+      <span class="lbl">Gesamtfortschritt</span>
+      <span style="font-size:11px;font-weight:700;color:var(--on-dark)" id="prog-pct">0%</span>
+    </div>
+    <div class="pbar lg"><div class="pfill" id="prog-bar" style="width:0%;background:var(--on-dark)"></div></div>
+  </div>
+
+  <!-- Wochenübersicht -->
+  <div class="sh"><span class="sh-title">Diese Woche</span></div>
+  <div style="padding:0 14px 4px">
+    <div class="week-row" id="week-row"></div>
+  </div>
+
+  <!-- Kalorien heute -->
+  <div class="sh"><span class="sh-title">Kalorien heute</span><span style="font-size:12px;font-weight:700;color:var(--on-dark-mute)" id="kcal-fraction">0 / 2650</span></div>
+  <div style="padding:0 14px 12px">
+    <div class="pbar lg" style="margin-bottom:10px"><div class="pfill" id="kcal-bar" style="width:0%;background:var(--on-dark)"></div></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <div class="card-sm" style="text-align:center">
+        <div class="disp-md" style="font-size:22px;color:var(--acc-green)" id="d-p">0g</div>
+        <div class="lbl" style="margin-top:2px">Protein</div>
+        <div class="pbar" style="margin-top:5px"><div class="pfill" id="d-p-bar" style="width:0%;background:var(--acc-green)"></div></div>
+      </div>
+      <div class="card-sm" style="text-align:center">
+        <div class="disp-md" style="font-size:22px;color:var(--acc-orange)" id="d-c">0g</div>
+        <div class="lbl" style="margin-top:2px">Carbs</div>
+        <div class="pbar" style="margin-top:5px"><div class="pfill" id="d-c-bar" style="width:0%;background:var(--acc-orange)"></div></div>
+      </div>
+      <div class="card-sm" style="text-align:center">
+        <div class="disp-md" style="font-size:22px;color:#69b1ff" id="d-f">0g</div>
+        <div class="lbl" style="margin-top:2px">Fett</div>
+        <div class="pbar" style="margin-top:5px"><div class="pfill" id="d-f-bar" style="width:0%;background:#69b1ff"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gewicht -->
+  <div class="sh">
+    <span class="sh-title">Gewicht</span>
+    <button class="btn-sm btn-acc" onclick="showWeightModal()">+ Eintragen</button>
+  </div>
+  <div style="padding:0 14px 14px">
+    <div class="card">
+      <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:10px">
+        <div>
+          <div class="disp-md" style="font-size:56px;line-height:1;color:var(--on-dark)" id="cur-weight">—</div>
+          <div class="lbl" style="margin-top:3px">kg aktuell</div>
+        </div>
+        <div style="padding-bottom:6px">
+          <div id="weight-change"></div>
+          <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);margin-top:4px">Ziel: ~90 kg</div>
+        </div>
+      </div>
+      <div id="weight-list"><div style="font-size:12px;color:var(--on-dark-mute)">Noch kein Gewicht eingetragen.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ ESSEN ════ -->
+<div class="scr" id="s-essen">
+  <div style="padding:18px 14px 10px">
+    <div class="disp-md" class="disp-md" style="margin-bottom:4px">Essen & Makros</div>
+    <div style="font-size:12px;color:var(--on-dark-mute)" id="essen-date"></div>
+  </div>
+
+  <!-- Mahlzeit eintragen -->
+  <div class="sh"><span class="sh-title">Mahlzeit eintragen</span></div>
+  <div style="padding:0 14px 8px">
+    <div class="card">
+      <!-- Mode Switch -->
+      <div class="mode-switch">
+        <button id="mode-text-btn" onclick="setEssenMode('text')" style="flex:1;padding:9px;border-radius:var(--r-md);border:1px solid var(--on-dark);background:rgba(73,79,223,.15);color:var(--on-dark);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s">✍️ Text</button>
+        <button id="mode-foto-btn" onclick="setEssenMode('foto')" style="flex:1;padding:9px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--on-dark-mute);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s">📷 Foto</button>
+      </div>
+
+      <!-- TEXT MODUS -->
+      <div id="md-text">
+        <div class="ilbl">Was hast du gegessen?</div>
+        <div class="row2" style="margin-bottom:0">
+          <input class="inp" type="text" id="food-name" placeholder="z.B. Rührei mit Lachs" style="margin:0">
+          <input class="inp" type="text" id="food-qty" placeholder="z.B. 3 Eier, 100g" style="margin:0">
+        </div>
+        <div style="margin-top:7px"></div>
+        <button class="ai-btn" id="calc-btn" onclick="calcMacros()">
+          <div class="spin" id="calc-spin"></div>
+          <span id="calc-txt">✦ Kalorien berechnen</span>
+        </button>
+      </div>
+
+      <!-- FOTO MODUS -->
+      <div id="md-foto" style="display:none">
+        <input type="file" id="food-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="onFoodFoto(this)">
+        <div onclick="document.getElementById('food-foto-inp').click()" id="food-foto-zone" style="border:1.5px dashed rgba(255,255,255,.18);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:8px;position:relative;overflow:hidden">
+          <img id="food-foto-prev" style="display:none;width:100%;max-height:200px;object-fit:cover;border-radius:var(--r-sm)">
+          <div id="food-foto-ph" style="display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="font-size:32px">📷</div>
+            <div style="font-size:13px;font-weight:600;color:var(--on-dark)">Foto aufnehmen oder hochladen</div>
+            <div style="font-size:11px;color:var(--on-dark-mute)">Claude analysiert Zutaten & Kalorien</div>
+          </div>
+          <div id="food-foto-change" style="display:none;position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.65);color:var(--on-dark);font-size:9px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase">Ändern</div>
+        </div>
+        <button class="ai-btn" id="foto-calc-btn" onclick="calcMacrosFoto()" disabled>
+          <div class="spin" id="foto-calc-spin"></div>
+          <span id="foto-calc-txt">📸 Zuerst Foto hochladen</span>
+        </button>
+        <!-- Editierbare Erkennungs-Box -->
+        <div id="foto-result-box" style="display:none;background:rgba(255,255,255,.04);border:1px solid var(--hairline-dark);border-radius:var(--r-md);padding:11px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <div style="font-size:9px;font-weight:700;color:var(--on-dark);text-transform:uppercase;letter-spacing:1.2px">Erkannte Mahlzeit</div>
+            <div style="font-size:9px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:.5px">✏️ bearbeitbar</div>
+          </div>
+          <div class="ilbl">Name</div>
+          <input class="inp" type="text" id="foto-name-inp" placeholder="Name der Mahlzeit" style="margin-bottom:7px;font-weight:600">
+          <div class="ilbl">Erkannte Zutaten & Mengen</div>
+          <textarea class="inp" id="foto-zutaten-inp" rows="2" placeholder="Zutaten..." style="margin-bottom:7px"></textarea>
+          <button class="ai-btn" id="foto-recalc-btn" onclick="recalcFoto()" style="margin-bottom:0">
+            <div class="spin" id="foto-recalc-spin"></div>
+            <span id="foto-recalc-txt">↻ Nährwerte neu berechnen</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- GEMEINSAM: Ergebnis + Eintragen -->
+      <div id="calc-note" style="display:none" class="ainote"></div>
+      <div class="mprev">
+        <div class="mpbox" id="mpb-k"><div class="mpv em" id="mpv-k">—</div><div class="mpl">kcal</div></div>
+        <div class="mpbox" id="mpb-p"><div class="mpv em" id="mpv-p">—</div><div class="mpl">Prot.</div></div>
+        <div class="mpbox" id="mpb-c"><div class="mpv em" id="mpv-c">—</div><div class="mpl">Carbs</div></div>
+        <div class="mpbox" id="mpb-f"><div class="mpv em" id="mpv-f">—</div><div class="mpl">Fett</div></div>
+      </div>
+      <select class="inp" id="meal-type" style="margin-bottom:8px">
+        <option>Frühstück</option><option>Mittagessen</option><option>Abendessen</option><option>Snack</option>
+      </select>
+      <button class="btn" id="log-btn" onclick="addLog()" disabled>Eintragen</button>
+    </div>
+  </div>
+
+  <!-- Heutige Einträge -->
+  <div class="sh"><span class="sh-title" id="log-date-lbl">Heute geloggt</span></div>
+  <div style="padding:0 14px 14px">
+    <div class="card" id="log-list">
+      <div style="font-size:12px;color:var(--on-dark-mute)">Noch keine Einträge.</div>
+    </div>
+  </div>
+
+  <!-- Wochenplan -->
+  <div class="sh"><span class="sh-title">Wochenplan</span></div>
+  <div style="padding:0 14px 10px">
+    <div id="diet-picker" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px"></div>
+  </div>
+  <div style="padding:0 14px 10px">
+    <div id="plan-tabs"></div>
+  </div>
+  <div style="padding:0 14px 14px" id="plan-meals"></div>
+</div>
+
+<!-- ════ TRAINING ════ -->
+<div class="scr" id="s-training">
+  <div style="padding:18px 14px 10px">
+    <div class="disp-md" class="disp-md" style="margin-bottom:4px">Training</div>
+    <div style="font-size:12px;color:var(--on-dark-mute)" id="training-date"></div>
+  </div>
+
+  <!-- Screenshot Upload -->
+  <div class="sh"><span class="sh-title">Workout Screenshot</span></div>
+  <div class="wrap" style="padding-bottom:0">
+    <div class="card">
+      <div style="font-size:12px;color:var(--on-dark-mute);margin-bottom:10px;line-height:1.5">
+        Lade einen Screenshot aus deiner Trainingsapp hoch. Claude liest Übungen, Gewichte und Sätze heraus.
+      </div>
+      <input type="file" id="wo-img-inp" accept="image/*" style="display:none" onchange="onWoImg(this)">
+      <div class="upload-zone" onclick="document.getElementById('wo-img-inp').click()" id="upload-zone">
+        <img id="wo-preview" class="upload-preview">
+        <div class="upload-ph" id="upload-ph">
+          <div style="font-size:36px">📸</div>
+          <div style="font-size:13px;font-weight:600;color:var(--on-dark)">Screenshot hochladen</div>
+          <div style="font-size:11px;color:var(--on-dark-mute)">Aus Hevy, Strong, FitNotes o.ä.</div>
+        </div>
+        <div id="upload-change" style="display:none;font-size:10px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:.5px;margin-top:6px;cursor:pointer">Anderes Foto wählen</div>
+      </div>
+      <button class="ai-btn" id="analyze-btn" onclick="analyzeWo()" disabled style="margin-top:8px">
+        <div class="spin" id="analyze-spin"></div>
+        <span id="analyze-txt">📸 Zuerst Screenshot hochladen</span>
+      </button>
+      <div id="wo-result" style="display:none;background:rgba(255,255,255,.04);border-radius:var(--r-md);padding:12px;margin-top:4px;border:1px solid var(--hairline-dark)">
+        <div style="font-size:10px;font-weight:700;color:var(--on-dark);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Erkanntes Workout</div>
+        <div id="wo-result-text" style="font-size:12px;color:var(--on-dark);line-height:1.7;white-space:pre-wrap"></div>
+        <button class="btn" onclick="saveWoFromAnalysis()" style="margin-top:10px;font-size:13px;padding:11px">Training speichern ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cardio eintragen -->
+  <div class="sh"><span class="sh-title">Cardio eintragen</span></div>
+  <div class="wrap" style="padding-bottom:0">
+    <div class="card">
+      <div class="ilbl">Art</div>
+      <select class="inp" id="cardio-type">
+        <option>🚴 Fahrrad</option>
+        <option>🏃 Laufen</option>
+        <option>🏊 Schwimmen</option>
+        <option>⚙️ Crosstrainer</option>
+        <option>🚣 Rudermaschine</option>
+        <option>🚶 Spazieren gehen</option>
+      </select>
+      <div class="row2">
+        <div>
+          <div class="ilbl">Dauer (Min.)</div>
+          <input class="inp" type="number" id="cardio-dur" placeholder="45" style="margin:0">
+        </div>
+        <div>
+          <div class="ilbl">Intensität</div>
+          <select class="inp" id="cardio-intensity" style="margin:0">
+            <option value="low">🟢 Locker</option>
+            <option value="mid" selected>🟡 Moderat</option>
+            <option value="high">🔴 Intensiv</option>
+          </select>
+        </div>
+      </div>
+      <textarea class="inp" id="cardio-note" rows="2" placeholder="Notiz (optional) – z.B. nüchtern, Puls 145 bpm..." style="margin-top:6px"></textarea>
+      <button class="btn" onclick="addCardio()">Cardio speichern</button>
+    </div>
+  </div>
+
+  <!-- Heutige Trainingseinträge -->
+  <div class="sh"><span class="sh-title" id="training-log-lbl">Heute trainiert</span></div>
+  <div style="padding:0 14px 14px">
+    <div class="card" id="training-log">
+      <div style="font-size:12px;color:var(--on-dark-mute)">Noch kein Training heute.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SPLASH SCREEN ════ -->
+<div id="splash" style="position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;overflow:hidden">
+  <!-- Hintergrund-Partikel -->
+  <canvas id="splash-canvas" style="position:absolute;inset:0;opacity:.35"></canvas>
+
+  <!-- Content -->
+  <div id="splash-content" style="position:relative;text-align:center;max-width:360px">
+    <!-- Logo Mark -->
+    <div id="splash-logo" style="width:64px;height:64px;border-radius:16px;background:var(--on-dark);display:flex;align-items:center;justify-content:center;margin:0 auto 28px;opacity:0;transform:scale(.7)">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L32 12V24L18 32L4 24V12L18 4Z" stroke="#000" stroke-width="2.5" fill="none"/>
+        <path d="M18 10L26 14.5V23.5L18 28L10 23.5V14.5L18 10Z" fill="#000"/>
+      </svg>
+    </div>
+
+    <!-- Headline -->
+    <div id="splash-headline" style="opacity:0;transform:translateY(20px)">
+      <div style="font-size:13px;font-weight:600;color:var(--on-dark-mute);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px">12 Wochen. Kein Bullshit.</div>
+      <div id="splash-msg" style="font-size:36px;font-weight:500;line-height:1.1;letter-spacing:-0.8px;color:var(--on-dark)">Du hast dich entschieden. Das war der schwerste Teil.</div>
+    </div>
+
+    <!-- Sub-Message -->
+    <div id="splash-sub" style="opacity:0;transform:translateY(16px);margin-top:20px;font-size:16px;font-weight:400;color:var(--on-dark-mute);line-height:1.5;letter-spacing:0.24px">
+      Jeden Tag ein bisschen besser.<br>Nichts anderes zählt.
+    </div>
+
+    <!-- CTA -->
+    <div id="splash-cta" style="opacity:0;transform:translateY(12px);margin-top:40px">
+      <div style="width:48px;height:3px;background:var(--on-dark);border-radius:2px;margin:0 auto 20px;transition:width .4s ease" id="splash-bar"></div>
+      <div style="font-size:13px;font-weight:600;color:var(--on-dark-mute);letter-spacing:1.5px;text-transform:uppercase">Wird geladen</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ API SETUP SCREEN ════ -->
+<div id="api-setup" style="display:none;position:fixed;inset:0;background:#000;z-index:9998;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px">
+  <div style="max-width:380px;width:100%;text-align:center">
+    <div style="width:56px;height:56px;border-radius:14px;background:var(--on-dark);display:flex;align-items:center;justify-content:center;margin:0 auto 24px">
+      <svg width="30" height="30" viewBox="0 0 36 36" fill="none">
+        <path d="M18 4L32 12V24L18 32L4 24V12L18 4Z" stroke="#000" stroke-width="2.5" fill="none"/>
+        <path d="M18 10L26 14.5V23.5L18 28L10 23.5V14.5L18 10Z" fill="#000"/>
+      </svg>
+    </div>
+    <div style="font-size:28px;font-weight:500;letter-spacing:-0.5px;line-height:1.1;margin-bottom:10px">KI-Funktionen aktivieren</div>
+    <div style="font-size:14px;color:var(--on-dark-mute);line-height:1.6;margin-bottom:28px">
+      Für Kalorien aus Text/Foto und Workout-Analyse brauchst du einen Anthropic API-Key.<br><br>
+      <span style="font-size:13px">Hol dir einen kostenlos auf <strong style="color:var(--on-dark)">console.anthropic.com</strong> → API Keys → Create Key</span>
+    </div>
+    <div style="text-align:left;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px">Dein API-Key</div>
+      <input id="api-key-inp" type="password" placeholder="sk-ant-api03-..." class="inp" style="font-family:monospace;font-size:13px;margin:0;height:52px">
+      <div style="font-size:12px;color:var(--on-dark-mute);margin-top:6px;line-height:1.5">🔒 Wird nur lokal auf diesem Gerät gespeichert. Geht nirgends raus.</div>
+    </div>
+    <button onclick="saveApiKey()" style="width:100%;padding:15px;background:var(--on-dark);color:#000;border:none;border-radius:var(--r-full);font-size:15px;font-weight:600;letter-spacing:0.24px;cursor:pointer;margin-top:14px">Aktivieren & starten</button>
+    <button onclick="skipApiKey()" style="width:100%;padding:13px;background:transparent;color:var(--on-dark-mute);border:none;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px">Ohne KI-Funktionen starten →</button>
+  </div>
+</div>
+
+
+<div class="scr" id="s-profil">
+  <div style="padding:28px 20px 20px">
+    <div style="font-size:36px;font-weight:500;line-height:1.0;letter-spacing:-0.8px;margin-bottom:4px">Profil</div>
+    <div style="font-size:14px;color:var(--on-dark-mute);letter-spacing:0.24px">Deine persönlichen Ziele</div>
+  </div>
+
+  <!-- Avatar + Name -->
+  <div style="padding:0 20px 24px">
+    <div class="card" style="text-align:center;padding:28px 20px">
+      <div id="profil-avatar-wrap" onclick="document.getElementById('profil-avatar-inp').click()" style="width:80px;height:80px;border-radius:50%;background:var(--surface-deep);border:2px solid var(--hairline-dark);margin:0 auto 14px;overflow:hidden;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center">
+        <img id="profil-avatar-img" style="width:100%;height:100%;object-fit:cover;display:none">
+        <div id="profil-avatar-ph" style="font-size:28px">👤</div>
+        <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--on-dark);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px">✏️</div>
+      </div>
+      <input type="file" id="profil-avatar-inp" accept="image/*" style="display:none" onchange="loadAvatar(this)">
+      <div style="font-size:22px;font-weight:500;letter-spacing:-0.3px" id="profil-name-disp">Dein Name</div>
+      <div style="font-size:13px;color:var(--on-dark-mute);margin-top:4px">Cut – 12 Wochen Programm</div>
+    </div>
+  </div>
+
+  <!-- Persönliche Daten -->
+  <div class="sh"><span class="sh-title">Persönliche Daten</span></div>
+  <div style="padding:0 20px 8px">
+    <div class="card">
+      <div class="ilbl">Name</div>
+      <input class="inp" type="text" id="profil-name" placeholder="Dein Name" oninput="saveProfile()">
+      <div class="row2">
+        <div>
+          <div class="ilbl">Gewicht (kg)</div>
+          <input class="inp" type="number" id="profil-weight" placeholder="104" style="margin:0" oninput="saveProfile()">
+        </div>
+        <div>
+          <div class="ilbl">Zielgewicht (kg)</div>
+          <input class="inp" type="number" id="profil-target" placeholder="90" style="margin:0" oninput="saveProfile()">
+        </div>
+      </div>
+      <div class="row2" style="margin-top:10px">
+        <div>
+          <div class="ilbl">Größe (cm)</div>
+          <input class="inp" type="number" id="profil-height" placeholder="190" style="margin:0" oninput="saveProfile()">
+        </div>
+        <div>
+          <div class="ilbl">Alter</div>
+          <input class="inp" type="number" id="profil-age" placeholder="30" style="margin:0" oninput="saveProfile()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Programm-Info -->
+  <div class="sh"><span class="sh-title">Programm</span></div>
+  <div style="padding:0 20px 8px">
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="background:rgba(255,255,255,.04);border-radius:var(--r-md);padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:500;letter-spacing:-0.5px" id="prog-days-left">84</div>
+          <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px;margin-top:3px">Tage übrig</div>
+        </div>
+        <div style="background:rgba(255,255,255,.04);border-radius:var(--r-md);padding:14px;text-align:center">
+          <div style="font-size:28px;font-weight:500;letter-spacing:-0.5px;color:var(--acc-green)" id="prog-lost">0</div>
+          <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px;margin-top:3px">kg abgenommen</div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--on-dark-mute)">Fortschritt</span>
+          <span style="font-size:12px;font-weight:600;color:var(--on-dark)" id="prog-pct-profil">0%</span>
+        </div>
+        <div class="pbar"><div class="pfill" id="prog-bar-profil" style="width:0%;background:var(--on-dark)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tagesziele -->
+  <div class="sh"><span class="sh-title">Tagesziele</span></div>
+  <div style="padding:0 20px 8px">
+    <div class="card">
+      <div class="row2">
+        <div>
+          <div class="ilbl">Kalorien</div>
+          <input class="inp" type="number" id="profil-kcal" placeholder="2650" style="margin:0" oninput="saveProfile()">
+        </div>
+        <div>
+          <div class="ilbl">Protein (g)</div>
+          <input class="inp" type="number" id="profil-protein" placeholder="200" style="margin:0" oninput="saveProfile()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset -->
+  <div style="padding:12px 20px 24px">
+    <button onclick="resetProgram()" style="width:100%;padding:14px;background:transparent;color:var(--acc-red);border:1px solid rgba(226,59,74,.3);border-radius:var(--r-full);font-size:14px;font-weight:600;letter-spacing:0.24px;cursor:pointer">Programm zurücksetzen</button>
+  </div>
+</div>
+
+</div><!-- /screens -->
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="ni on" onclick="nav('dash',this)"><span class="ni-ic">◈</span><span>Übersicht</span></button>
+  <button class="ni" onclick="nav('essen',this);initEssen()"><span class="ni-ic">🥗</span><span>Essen</span></button>
+  <button class="ni" onclick="nav('training',this);initTraining()"><span class="ni-ic">💪</span><span>Training</span></button>
+  <button class="ni" onclick="nav('profil',this);initProfil()"><span class="ni-ic">👤</span><span>Profil</span></button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<!-- Rezept Modal -->
+<div id="rezept-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:flex-end;padding:0">
+  <div style="background:var(--surface-elev);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:0 0 40px;width:100%;max-height:85dvh;overflow-y:auto;border-top:1px solid var(--hairline-dark)">
+    <!-- Header -->
+    <div style="position:sticky;top:0;background:var(--surface-elev);padding:20px 20px 14px;border-bottom:1px solid var(--hairline-dark)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px" id="rezept-type"></div>
+          <div style="font-size:20px;font-weight:500;line-height:1.2;letter-spacing:-0.3px" id="rezept-name"></div>
+        </div>
+        <button onclick="hideRezept()" style="background:rgba(255,255,255,.08);border:none;color:var(--on-dark-mute);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+      </div>
+      <!-- Makros -->
+      <div style="display:flex;gap:10px;margin-top:12px" id="rezept-macros"></div>
+    </div>
+    <!-- Zutaten -->
+    <div style="padding:18px 20px 8px">
+      <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">Zutaten</div>
+      <div style="font-size:14px;color:var(--on-dark-mute);line-height:1.6" id="rezept-zutaten"></div>
+    </div>
+    <!-- Zubereitung -->
+    <div style="padding:8px 20px 8px">
+      <div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px">Zubereitung</div>
+      <div style="font-size:14px;line-height:1.7;color:var(--on-dark)" id="rezept-text"></div>
+    </div>
+    <!-- Log Button -->
+    <div style="padding:16px 20px 0">
+      <button id="rezept-log-btn" class="btn" style="margin:0">+ Diese Mahlzeit eintragen</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Reset Bestätigungs-Modal -->
+<div id="reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:600;align-items:flex-end;padding:0">
+  <div style="background:var(--surface-elev);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:28px 20px 40px;width:100%;border-top:1px solid var(--hairline-dark)">
+    <div style="font-size:20px;font-weight:500;letter-spacing:-0.3px;margin-bottom:8px">Programm zurücksetzen?</div>
+    <div style="font-size:14px;color:var(--on-dark-mute);line-height:1.5;margin-bottom:24px">Alle gespeicherten Daten werden gelöscht: Gewichtsverlauf, Trainingslog, Essenstracker und Einstellungen. Dieser Schritt kann nicht rückgängig gemacht werden.</div>
+    <button onclick="confirmReset()" style="width:100%;padding:14px;background:var(--acc-red);color:#fff;border:none;border-radius:var(--r-full);font-size:15px;font-weight:600;letter-spacing:0.24px;cursor:pointer;margin-bottom:10px">Ja, alles löschen</button>
+    <button onclick="document.getElementById('reset-modal').style.display='none'" style="width:100%;padding:14px;background:transparent;color:var(--on-dark-mute);border:1px solid var(--hairline-dark);border-radius:var(--r-full);font-size:15px;font-weight:600;cursor:pointer">Abbrechen</button>
+  </div>
+</div>
+
+<div id="weight-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;align-items:flex-end;padding:0">
+  <div style="background:var(--surface-elev);border-radius:16px 16px 0 0;padding:24px 16px 40px;width:100%;border-top:1px solid var(--hairline-dark)">
+    <div class="disp-md" style="font-size:22px;margin-bottom:16px">Gewicht eintragen</div>
+    <div class="ilbl">Gewicht (kg)</div>
+    <input class="inp" type="number" id="wt-inp" inputmode="decimal" placeholder="z.B. 103.5" step="0.1" style="font-size:20px;font-weight:700;text-align:center">
+    <button class="btn" onclick="saveWeight()">Speichern</button>
+    <button class="btn-ghost" onclick="hideWeightModal()">Abbrechen</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ═══ ZIELE ═══
+var GOAL={kcal:2650,p:200,c:270,f:65};
+var START_WEIGHT=104,TARGET_WEIGHT=90,START_DATE=null;
+
+// ═══ DATEN ═══
+var TODAY=new Date().toLocaleDateString('de-DE');
+var logs=[],trainingLogs=[],weightLog=[];
+
+// Init aus localStorage
+(function(){
+  var sd=localStorage.getItem('cutStartDate');
+  if(!sd){sd=new Date().toISOString();localStorage.setItem('cutStartDate',sd);}
+  START_DATE=new Date(sd);
+  var ld=localStorage.getItem('cutLogDate');
+  if(ld===TODAY){
+    logs=JSON.parse(localStorage.getItem('cutLogs')||'[]');
+    trainingLogs=JSON.parse(localStorage.getItem('cutTraining')||'[]');
+  } else {
+    localStorage.setItem('cutLogDate',TODAY);
+    localStorage.setItem('cutLogs','[]');
+    localStorage.setItem('cutTraining','[]');
+  }
+  weightLog=JSON.parse(localStorage.getItem('cutWeight')||'[]');
+})();
+
+// ═══ ERNÄHRUNGSPLÄNE ═══
+// 4 Varianten: pescatarisch, vegetarisch, vegan, omnivor
+// Alle ~2650 kcal, high protein, Cut-optimiert
+
+var PLANS = {
+
+pescatarisch: [
+  {l:'Mo',meals:[
+    {t:'Frühstück',n:'Skyr-Bowl mit Beeren & Haferflocken',d:'300g Skyr, 40g Haferflocken, 100g TK-Beeren, 10g Chiasamen',k:490,p:42,c:62,f:8,
+     r:'Haferflocken in Skyr einrühren und 5 Min. quellen lassen. TK-Beeren vorher auftauen oder gefroren draufgeben. Chiasamen darüber streuen. Wer mag: Schuss Zitronensaft oder Vanille dazu. Fertig in 5 Minuten – kein Kochen nötig.'},
+    {t:'Mittagessen',n:'Thunfisch-Quinoa-Bowl',d:'200g Quinoa (gek.), 2 Dosen Thunfisch, Paprika, Gurke, Zitrone',k:720,p:68,c:78,f:12,
+     r:'Quinoa nach Packungsanleitung kochen (ca. 15 Min.). Thunfisch abtropfen lassen. Paprika würfeln, Gurke in Scheiben. Alles in der Schüssel mischen. Mit Zitronensaft, etwas Olivenöl, Salz und Pfeffer abschmecken. Optional: frische Petersilie.'},
+    {t:'Abendessen',n:'Lachsfilet mit Brokkoli & Süßkartoffel',d:'220g Lachs, 250g Brokkoli, 150g Süßkartoffel, Olivenöl',k:680,p:52,c:48,f:22,
+     r:'Süßkartoffel schälen, würfeln, bei 200°C Heißluft 25 Min. backen. Brokkoli in Röschen teilen, letzten 10 Min. dazugeben. Lachs in der Pfanne mit Olivenöl bei mittlerer Hitze 3-4 Min. je Seite braten. Mit Salz, Pfeffer und Zitrone würzen.'},
+    {t:'Snack',n:'Quark mit Proteinpulver',d:'250g Magerquark, 25g Proteinpulver',k:320,p:52,c:14,f:4,
+     r:'Magerquark in eine Schüssel geben. Proteinpulver darüber sieben und gründlich einrühren bis keine Klumpen mehr vorhanden. Bei Bedarf einen Schuss Wasser oder Milch für cremigere Konsistenz. Sofort genießen oder kühl stellen.'}
+  ]},
+  {l:'Di',meals:[
+    {t:'Frühstück',n:'Protein-Omelette mit Räucherlachs',d:'4 Eier, 100g Räucherlachs, Spinat, 1 Scheibe Vollkornbrot',k:520,p:54,c:22,f:24,
+     r:'Eier verquirlen, mit Salz und Pfeffer würzen. Pfanne erhitzen, Eier hineingeben. Wenn die Unterseite fest ist, Spinat und Räucherlachs auf eine Hälfte legen, zuklappen. 2 Min. bei mittlerer Hitze fertig garen. Mit Vollkornbrot servieren.'},
+    {t:'Mittagessen',n:'Pangasius mit Naturreis & Mischgemüse',d:'200g Pangasius, 150g Reis (gek.), 200g Mischgemüse TK',k:680,p:58,c:82,f:8,
+     r:'Reis nach Packungsanleitung kochen. Mischgemüse in der Pfanne mit etwas Öl anbraten, ca. 8 Min. Pangasius in einer separaten Pfanne mit Olivenöl bei mittlerer Hitze 3-4 Min. je Seite garen. Mit Sojasoße, Knoblauch und Ingwer abschmecken.'},
+    {t:'Abendessen',n:'Rotes Linsen-Dal mit Ei',d:'150g rote Linsen, 2 Eier, Kokosmilch light, Tomaten',k:620,p:42,c:72,f:16,
+     r:'Zwiebel und Knoblauch anschwitzen. Rote Linsen, Kokosmilch und Dosentomaten dazugeben, 20 Min. köcheln. Mit Kurkuma, Cumin und Salz würzen. Eier separat pochieren oder als Spiegelei braten und obenauf legen. Mit frischem Koriander garnieren.'},
+    {t:'Snack',n:'Cottage Cheese mit Walnüssen',d:'200g Cottage Cheese, 15g Walnüsse',k:290,p:28,c:6,f:16,
+     r:'Cottage Cheese in eine Schüssel geben. Walnüsse grob hacken und darüber streuen. Optional mit etwas Zimt oder Honig verfeinern. Ideal als schneller Snack direkt nach dem Training oder als Abend-Snack.'}
+  ]},
+  {l:'Mi',meals:[
+    {t:'Frühstück',n:'Overnight Oats mit Proteinpulver',d:'80g Haferflocken, 200ml Hafermilch, 30g Whey, 100g Beeren',k:510,p:44,c:66,f:8,
+     r:'Haferflocken und Proteinpulver mischen. Hafermilch darübergießen und gut verrühren. Abgedeckt über Nacht in den Kühlschrank stellen. Morgens mit Beeren toppen und bei Bedarf noch etwas Milch dazugeben. Geht auch mit TK-Beeren.'},
+    {t:'Mittagessen',n:'Garnelen-Bowl mit Avocado & Reis',d:'200g Garnelen, 120g Reis, ½ Avocado, Gurke, Sojasoße',k:660,p:52,c:70,f:18,
+     r:'Reis kochen. Garnelen mit Knoblauch und Chili in der Pfanne 3-4 Min. braten bis sie rosa sind. Avocado in Scheiben schneiden, Gurke würfeln. Alles über dem Reis anrichten. Mit Sojasoße, Sesamöl und Limettensaft abschmecken. Sesam drüber.'},
+    {t:'Abendessen',n:'Gebackener Lachs mit Ofengemüse',d:'220g Lachs, Zucchini, Paprika, Kirschtomaten, Olivenöl',k:620,p:50,c:22,f:30,
+     r:'Gemüse grob würfeln, auf dem Backblech mit Olivenöl, Salz und Kräutern der Provence mischen. Bei 200°C 15 Min. vorbacken. Lachs mit Zitronenscheiben und Dill drauflegen, weitere 15 Min. backen bis der Fisch sich leicht lösen lässt.'},
+    {t:'Snack',n:'Skyr natur & Mandeln',d:'200g Skyr, 20g Mandeln',k:310,p:26,c:16,f:14,
+     r:'Skyr in eine Schüssel geben. Mandeln (ganz oder gehackt) darüber streuen. Wer mag, gibt noch etwas Zimt dazu. Einfacher, sättigender Snack der auch unterwegs gut funktioniert – einfach in eine kleine Box füllen.'}
+  ]},
+  {l:'Do',meals:[
+    {t:'Frühstück',n:'Rührei mit Räucherlachs',d:'3 Eier, 80g Räucherlachs, 1 Scheibe Vollkornbrot, Tomaten',k:490,p:46,c:18,f:24,
+     r:'Eier verquirlen, mit Salz und Pfeffer würzen. In einer beschichteten Pfanne mit Butter bei niedriger Hitze langsam stocken lassen – immer wieder sanft umrühren. Vom Herd nehmen bevor sie ganz fest sind, Restwärme reicht. Mit Räucherlachs und Tomatenscheiben servieren.'},
+    {t:'Mittagessen',n:'Thunfisch-Nicoise-Salat',d:'2 Dosen Thunfisch, 2 Eier, grüne Bohnen, 100g Kartoffeln',k:680,p:64,c:42,f:24,
+     r:'Kartoffeln und Eier gleichzeitig kochen (Eier 10 Min., Kartoffeln 15 Min.). Grüne Bohnen 5 Min. blanchieren. Thunfisch abtropfen. Alles auf einem Teller anrichten. Dressing: Senf, Rotweinessig, Olivenöl, Salz, Pfeffer.'},
+    {t:'Abendessen',n:'Pangasius mit Linsen & Spinat',d:'250g Pangasius, 120g Linsen (gek.), 150g Spinat',k:620,p:58,c:52,f:10,
+     r:'Linsen nach Packungsanleitung kochen (vorgekochte aus der Dose sparen Zeit). Spinat in der Pfanne mit Knoblauch zusammenfallen lassen. Pangasius würzen und in der Pfanne 4 Min. je Seite garen. Linsen und Spinat mischen, Fisch drauflegen.'},
+    {t:'Snack',n:'Magerquark & Erdnussmus',d:'250g Magerquark, 1 EL Erdnussmus',k:320,p:34,c:12,f:14,
+     r:'Magerquark in die Schüssel geben. Einen gehäuften Esslöffel Erdnussmus obenauf setzen. Entweder untermischen für gleichmäßigen Geschmack oder schichtweise essen. Wer es süßer mag: Prise Zimt oder Tropfen Vanilleextrakt dazu.'}
+  ]},
+  {l:'Fr',meals:[
+    {t:'Frühstück',n:'Protein-Pancakes',d:'80g Haferflocken, 3 Eier, 200g Skyr, 100g Beeren',k:540,p:48,c:58,f:12,
+     r:'Haferflocken fein mahlen (Mixer) oder direkt als Teig verwenden. Mit Eiern und Skyr vermischen bis ein glatter Teig entsteht. Portionsweise in einer beschichteten Pfanne ohne Fett ausbacken – 2 Min. je Seite bei mittlerer Hitze. Mit Beeren servieren.'},
+    {t:'Mittagessen',n:'Kichererbsen-Curry mit Ei',d:'200g Kichererbsen, 2 Eier, Kokosmilch light, Spinat, 100g Reis',k:700,p:44,c:82,f:16,
+     r:'Zwiebel und Knoblauch anschwitzen. Curry-Paste oder Gewürze (Curry, Kurkuma, Cumin) zugeben. Kichererbsen und Kokosmilch dazugeben, 15 Min. köcheln. Spinat einrühren. Eier pochieren: leichter Essigschuss ins Wasser, Eier vorsichtig hineingleiten lassen, 3-4 Min.'},
+    {t:'Abendessen',n:'Lachstatar mit Avocado & Crispbread',d:'160g Lachs, 1 Avocado, 4 Crispbread, Zitrone',k:580,p:42,c:28,f:32,
+     r:'Lachs in kleine Würfel schneiden (Sushi-Qualität für rohes Tatar verwenden). Mit Sojasoße, Sesamöl, Limettensaft und Chili marinieren. Avocado würfeln oder als Guacamole zerdrücken. Auf Crispbread schichten – erst Avocado, dann Lachstatar.'},
+    {t:'Snack',n:'Edamame & Cottage Cheese',d:'100g Edamame, 150g Cottage Cheese',k:310,p:34,c:16,f:8,
+     r:'Edamame aus der TK-Packung: 5 Min. in Salzwasser kochen oder in der Mikrowelle erhitzen. Aus der Schote herausdrücken. Mit Cottage Cheese in eine Schüssel geben. Mit etwas Meersalz und Zitronensaft würzen. Protein-Snack der satt macht.'}
+  ]},
+  {l:'Sa',meals:[
+    {t:'Frühstück',n:'Großes Rührei-Gemüse-Wrap',d:'4 Eier, Paprika, Zwiebeln, Spinat, 2 Vollkorn-Wraps',k:580,p:40,c:54,f:22,
+     r:'Zwiebeln und Paprika in der Pfanne anbraten. Spinat dazugeben, kurz zusammenfallen lassen. Verquirlte Eier darübergießen, langsam stocken lassen. Würzen mit Salz, Pfeffer, Paprikapulver. Auf die Wraps verteilen, einrollen und halbieren.'},
+    {t:'Mittagessen',n:'Lachsfilet mit Quinoa & Rucola',d:'250g Lachs, 160g Quinoa (gek.), Rucola, Kirschtomaten, Parmesan',k:740,p:62,c:60,f:24,
+     r:'Quinoa kochen. Lachs mit Olivenöl, Zitrone und Dill einreiben, in der Pfanne 4 Min. je Seite braten. Quinoa mit Rucola und halbierten Kirschtomaten mischen. Mit Olivenöl und Zitronensaft anmachen. Lachs drauflegen, Parmesan drüberhobeln.'},
+    {t:'Abendessen',n:'Tofu-Gemüse-Pfanne mit Reis',d:'200g Tofu, 200g Mischgemüse, 100g Reis, Sojasoße',k:580,p:30,c:66,f:18,
+     r:'Tofu in Würfel schneiden, in Sojasoße und etwas Stärke marinieren. In der Pfanne bei hoher Hitze goldbraun braten. Mischgemüse dazugeben. Soße: Sojasoße, Sesamöl, Ingwer, Knoblauch, Chili. Über alles gießen, 5 Min. köcheln. Mit Reis servieren.'},
+    {t:'Snack',n:'Griechischer Joghurt & Walnüsse',d:'200g griechischer Joghurt (2%), 15g Walnüsse',k:280,p:18,c:18,f:14,
+     r:'Griechischen Joghurt in eine Schüssel geben. Walnüsse grob hacken und darüber streuen. Optional: Drizzle Honig oder Agavendicksaft, frische Minze, etwas Zimt. Einfach, sättigend und voller gesunder Fette.'}
+  ]},
+  {l:'So',meals:[
+    {t:'Frühstück',n:'Avocado-Ei-Toast mit Räucherlachs',d:'2 Eier, 1 Avocado, 2 Scheiben Sauerteig, 60g Räucherlachs',k:560,p:36,c:42,f:28,
+     r:'Sauerteigbrot toasten. Avocado mit Gabel zerdrücken, mit Zitronensaft, Salz und Chiliflocken würzen. Auf das Toast streichen. Eier nach Wahl zubereiten (pochiert, Spiegel oder Rührei). Räucherlachs drauflegen. Mit Dill und schwarzem Pfeffer abschließen.'},
+    {t:'Mittagessen',n:'Garnelen-Soba-Nudeln',d:'200g Garnelen, 120g Soba-Nudeln, Bok Choi, Sojasoße, Ingwer',k:680,p:52,c:78,f:10,
+     r:'Soba-Nudeln nach Packung kochen (ca. 5 Min.), abschrecken. Garnelen in der Pfanne mit Knoblauch und Ingwer 3 Min. braten. Bok Choi vierteln und mitbraten. Soße: Sojasoße, Sesamöl, Reisessig, Chili. Alles mischen, Sesam und Frühlingszwiebeln drüber.'},
+    {t:'Abendessen',n:'Thunfisch-Frittata',d:'5 Eier, 1 Dose Thunfisch, Paprika, Zwiebeln, Feta 40g',k:580,p:58,c:14,f:30,
+     r:'Backofen auf 180°C vorheizen. Zwiebeln und Paprika in einer ofenfesten Pfanne anbraten. Verquirlte Eier mit abgetropftem Thunfisch darübergießen. Feta zerbröseln und drüber streuen. 5 Min. auf dem Herd stocken lassen, dann 10-12 Min. im Ofen fertig backen.'},
+    {t:'Snack',n:'Proteinshake & Mandeln',d:'30g Whey, 300ml Mandelmilch, 20g Mandeln',k:320,p:32,c:14,f:14,
+     r:'Proteinpulver mit Mandelmilch in einem Shaker oder Mixer mischen. Gut schütteln bis keine Klumpen mehr vorhanden. Mandeln separat als Beilage essen. Tipp: Im Sommer mit Eiswürfeln mixen für einen erfrischenden Post-Workout-Shake.'}
+  ]}
+],
+
+vegetarisch: [
+  {l:'Mo',meals:[
+    {t:'Frühstück',n:'Skyr-Bowl mit Beeren & Granola',d:'300g Skyr, 30g Granola, 100g Beeren, 1 EL Hanfsamen',k:480,p:40,c:60,f:10,
+     r:'Skyr in eine Schüssel geben. Granola darüber streuen für Biss und Crunch. Beeren (frisch oder aufgetaut) draufgeben. Hanfsamen zum Schluss darüber – die liefern alle essentiellen Aminosäuren. Optional: Drizzle Honig oder Agavendicksaft.'},
+    {t:'Mittagessen',n:'Griechischer Linsen-Salat mit Feta',d:'200g Linsen (gek.), 80g Feta, Tomaten, Gurke, Oliven, Zitrone',k:680,p:42,c:64,f:22,
+     r:'Vorgekochte Linsen abtropfen und abkühlen lassen. Tomaten würfeln, Gurke in Scheiben, Oliven halbieren. Feta zerbröseln. Alles mischen. Dressing: Olivenöl, Zitronensaft, Oregano, Salz, Pfeffer. Mindestens 15 Min. ziehen lassen – schmeckt kalt besser.'},
+    {t:'Abendessen',n:'Rührei-Bowl mit Süßkartoffel',d:'4 Eier, 200g Süßkartoffel, Paprika, Spinat, Olivenöl',k:660,p:38,c:58,f:28,
+     r:'Süßkartoffel schälen und würfeln, in Olivenöl bei 200°C 20 Min. rösten. Paprika kurz anbraten, Spinat dazugeben. Eier verquirlen und über das Gemüse geben, bei niedriger Hitze zu cremigem Rührei stocken lassen. Mit Süßkartoffelwürfeln anrichten.'},
+    {t:'Snack',n:'Quark mit Proteinpulver & Beeren',d:'250g Magerquark, 25g Proteinpulver, 80g Beeren',k:340,p:54,c:18,f:4,
+     r:'Proteinpulver unter den Quark rühren bis alles glatt ist. Beeren frisch oder aufgetaut draufgeben. Wer mag: Prise Vanille oder Zimt dazu. Einfacher High-Protein Snack – ideal nach dem Training.'}
+  ]},
+  {l:'Di',meals:[
+    {t:'Frühstück',n:'Protein-Omelette mit Käse & Gemüse',d:'4 Eier, 40g Gouda, Paprika, Champignons, Spinat',k:510,p:44,c:12,f:32,
+     r:'Champignons in Scheiben und Paprika würfeln. In der Pfanne anbraten bis sie Farbe bekommen. Verquirlte Eier darübergießen, Käse drüberreiben. Spinat auf eine Hälfte legen. Wenn die Unterseite fest ist, zuklappen. Bei niedriger Hitze 2 Min. fertig garen.'},
+    {t:'Mittagessen',n:'Kichererbsen-Curry mit Basmati',d:'250g Kichererbsen, Kokosmilch light, Tomaten, Spinat, 150g Reis',k:720,p:32,c:98,f:16,
+     r:'Zwiebel, Knoblauch und Ingwer anschwitzen. Currypulver, Kurkuma und Garam Masala hinzufügen. Dosentomaten, Kichererbsen und Kokosmilch dazugeben. 15-20 Min. köcheln lassen. Spinat einrühren. Mit Basmati und frischem Koriander servieren.'},
+    {t:'Abendessen',n:'Halloumi mit Quinoa & Rucola',d:'150g Halloumi, 160g Quinoa (gek.), Rucola, Kirschtomaten',k:680,p:40,c:58,f:28,
+     r:'Quinoa kochen. Halloumi in Scheiben schneiden und in der Pfanne ohne Öl goldbraun braten (3 Min. je Seite – er bräunt schön ohne zu schmelzen). Quinoa mit Rucola und halbierten Kirschtomaten mischen. Dressing: Zitrone, Olivenöl, Honig. Halloumi drauflegen.'},
+    {t:'Snack',n:'Cottage Cheese & Walnüsse',d:'200g Cottage Cheese, 15g Walnüsse',k:290,p:28,c:6,f:16,
+     r:'Cottage Cheese mit einem Schuss Zitronensaft und etwas Salz abschmecken. Walnüsse grob hacken und darüber geben. Optional: frische Kräuter wie Schnittlauch für eine herzhafte Variante, oder Beeren für etwas Süße.'}
+  ]},
+  {l:'Mi',meals:[
+    {t:'Frühstück',n:'Overnight Oats mit Chiasamen',d:'80g Haferflocken, 250ml Vollmilch, 15g Chiasamen, 100g Beeren',k:500,p:24,c:68,f:14,
+     r:'Haferflocken, Chiasamen und Milch in einem Glas oder einer Dose mischen. Gut umrühren damit die Chiasamen sich gleichmäßig verteilen. Verschlossen über Nacht kühlen. Morgens Beeren draufgeben. Die Chiasamen quellen auf und die Konsistenz wird puddingartig.'},
+    {t:'Mittagessen',n:'Tofu-Bowl mit Brokkoli & Teriyaki',d:'250g Tofu, 250g Brokkoli, 150g Reis, Sojasoße, Sesam',k:700,p:42,c:82,f:18,
+     r:'Tofu pressen (Küchenpapier, Gewicht drauf, 15 Min.) und würfeln. In der Pfanne bei hoher Hitze knusprig braten. Teriyaki-Soße: Sojasoße, Honig, Sesamöl, Knoblauch. Brokkoli dampfgaren 5 Min. Alles über Reis anrichten, Soße drüber, Sesam und Frühlingszwiebeln.'},
+    {t:'Abendessen',n:'Griechisches Omelett mit Feta',d:'4 Eier, 60g Feta, Tomaten, Oliven, Oregano, Vollkornbrot',k:560,p:38,c:24,f:32,
+     r:'Eier verquirlen, Oregano untermischen. In einer ofenfesten Pfanne bei mittlerer Hitze stocken lassen. Feta, halbierte Kirschtomaten und Oliven drauflegen. Kurz unter den Grill (oder Deckel drauf für 2 Min.) bis der Feta leicht Farbe bekommt. Mit Vollkornbrot.'},
+    {t:'Snack',n:'Skyr & Mandeln',d:'200g Skyr, 20g Mandeln',k:310,p:26,c:16,f:14,
+     r:'Skyr direkt aus dem Becher oder in eine Schüssel. Mandeln (ganz oder gehackt) drüber streuen. Schneller Snack ohne Vorbereitung. Wer es aromatischer mag: Mandeln kurz in der Pfanne trocken rösten – das intensiviert den Geschmack deutlich.'}
+  ]},
+  {l:'Do',meals:[
+    {t:'Frühstück',n:'Avocado-Ei-Toast',d:'2 Eier, 1 Avocado, 2 Scheiben Sauerteig, Kirschtomaten',k:540,p:26,c:44,f:30,
+     r:'Sauerteigbrot rösten. Avocado halbieren, Kern entfernen, Fruchtfleisch mit Gabel zerdrücken. Mit Salz, Zitronensaft und Chiliflocken würzen. Auf dem Toast verteilen. Eier pochen oder spiegeln. Kirschtomaten halbieren und drauflegen. Mit schwarzem Pfeffer abschließen.'},
+    {t:'Mittagessen',n:'Linsen-Tomaten-Suppe mit Brot',d:'200g rote Linsen, Tomaten, Karotten, Sellerie, 2 Scheiben Brot',k:660,p:36,c:90,f:10,
+     r:'Zwiebeln, Karotten und Sellerie würfeln, anschwitzen. Dosentomaten und Gemüsebrühe dazugeben. Rote Linsen einrühren – die müssen nicht vorher eingeweicht werden. 20 Min. köcheln bis die Linsen weich sind. Mit Cumin, Paprika und Zitrone abschmecken. Mit Brot servieren.'},
+    {t:'Abendessen',n:'Paneer-Palak (Spinat-Käse-Curry)',d:'200g Paneer, 300g Blattspinat, Zwiebeln, Gewürze, 100g Reis',k:720,p:42,c:62,f:30,
+     r:'Paneer würfeln und in Öl goldbraun anbraten. Beiseite stellen. Zwiebeln, Knoblauch und Ingwer anschwitzen. Kurkuma, Cumin und Koriander zugeben. Spinat hinzufügen und zusammenfallen lassen. Pürieren (oder stückig lassen). Paneer und Sahne einrühren, abschmecken.'},
+    {t:'Snack',n:'Magerquark & Beeren',d:'250g Magerquark, 100g Beeren, 1 EL Honig',k:280,p:30,c:26,f:2,
+     r:'Magerquark in eine Schüssel geben. Beeren darüber verteilen. Honig im dünnen Strahl drübergeben. Optional: Prise Zimt oder Vanilleextrakt für mehr Aroma. Funktioniert auch als Dessert-Alternative – satiating und protein-reich.'}
+  ]},
+  {l:'Fr',meals:[
+    {t:'Frühstück',n:'Protein-Pancakes mit Beeren',d:'80g Haferflocken, 3 Eier, 200g Skyr, 100g Beeren',k:540,p:48,c:58,f:12,
+     r:'Haferflocken fein mahlen. Mit Eiern und Skyr zu einem glatten Teig verarbeiten. Etwas Backpulver und Prise Salz dazu. Portionsweise bei mittlerer Hitze in beschichteter Pfanne ohne Fett backen. Wenn Blasen aufsteigen, wenden (ca. 2 Min. je Seite). Mit Beeren servieren.'},
+    {t:'Mittagessen',n:'Mexikanische Bowl mit Bohnen',d:'200g schwarze Bohnen, 150g Reis, Mais, Avocado, Salsa',k:740,p:30,c:106,f:18,
+     r:'Reis kochen. Schwarze Bohnen aus der Dose abtropfen und kurz erhitzen. Avocado würfeln. Mais abgießen. Alles über dem Reis anrichten. Salsa frisch oder aus dem Glas darüber. Mit Limettensaft, Koriander und optional Jalapeño abschließen.'},
+    {t:'Abendessen',n:'Frittata mit Gemüse & Feta',d:'5 Eier, 80g Feta, Zucchini, Paprika, Zwiebeln',k:560,p:42,c:14,f:34,
+     r:'Ofen auf 180°C vorheizen. Gemüse würfeln und in ofenfester Pfanne anschwitzen. Eier verquirlen, würzen. Über das Gemüse gießen. Feta zerbröseln und drüber streuen. 5 Min. auf dem Herd, dann 10-12 Min. im Ofen bis die Mitte fest ist. In Stücke schneiden.'},
+    {t:'Snack',n:'Edamame & Joghurt',d:'100g Edamame, 150g griechischer Joghurt',k:300,p:28,c:20,f:10,
+     r:'Edamame aus der TK-Packung 5 Min. in Salzwasser kochen. Abgießen und aus der Schote drücken. Griechischen Joghurt mit Salz und Zitronensaft würzen. Edamame daneben oder im Joghurt. Ideal für unterwegs – beide Komponenten separat transportieren.'}
+  ]},
+  {l:'Sa',meals:[
+    {t:'Frühstück',n:'French Toast mit Beeren',d:'3 Scheiben Vollkornbrot, 3 Eier, 200ml Milch, Zimt, 100g Beeren',k:560,p:34,c:62,f:18,
+     r:'Eier mit Milch, Zimt und Prise Salz verquirlen. Brotscheiben kurz in die Eiermasse tauchen. In Pfanne mit etwas Butter bei mittlerer Hitze goldbraun braten (2-3 Min. je Seite). Mit Beeren und optional einem Schuss Ahornsirup servieren. Warmer Start.'},
+    {t:'Mittagessen',n:'Buddha Bowl mit Tofu & Hummus',d:'200g Tofu, 80g Hummus, 150g Quinoa, Gurke, Karotte, Spinat',k:720,p:40,c:72,f:28,
+     r:'Quinoa kochen. Tofu pressen, würfeln und knusprig braten. Karotten raspeln oder in Stifte schneiden. Gurke würfeln. Spinat roh verwenden. Alles kreisförmig in der Schüssel anrichten. Hummus in die Mitte. Dressing: Tahini, Zitrone, Knoblauch, Wasser.'},
+    {t:'Abendessen',n:'Zucchini-Feta-Auflauf',d:'400g Zucchini, 100g Feta, 3 Eier, Tomaten, Kräuter',k:520,p:36,c:20,f:32,
+     r:'Zucchini in Scheiben schneiden und leicht salzen. 10 Min. Wasser ziehen lassen, dann abtrocknen. Lagen weise in Auflaufform schichten: Zucchini, Kirschtomaten, Feta. Eier verquirlen, über alles gießen. Kräuter der Provence drüber. Bei 180°C 25-30 Min. backen.'},
+    {t:'Snack',n:'Proteinshake & Mandeln',d:'30g Whey, 300ml Milch, 20g Mandeln',k:360,p:38,c:18,f:16,
+     r:'Whey und Milch im Shaker gut mischen (30 Sek. kräftig schütteln). Alternativ im Mixer mit Eiswürfeln für eine cremigere Konsistenz. Mandeln separat essen – langsam kauen. Der Shake liefert schnelle Proteine, die Mandeln gesunde Fette und Ballaststoffe.'}
+  ]},
+  {l:'So',meals:[
+    {t:'Frühstück',n:'Großes Scrambled Egg mit Gemüse',d:'4 Eier, Champignons, Spinat, Tomaten, Vollkornbrot',k:520,p:40,c:34,f:24,
+     r:'Champignons in Scheiben anbraten bis sie Farbe bekommen. Kirschtomaten halbiert dazugeben. Spinat kurz mitbraten. Verquirlte Eier bei niedriger Hitze mit einem Spatel langsam cremig stocken lassen – öfter umrühren. Mit Vollkornbrot und frischen Kräutern servieren.'},
+    {t:'Mittagessen',n:'Rote Linsen-Suppe mit Joghurt',d:'200g rote Linsen, Karotten, Cumin, Paprikapulver, 100g Joghurt',k:640,p:38,c:80,f:12,
+     r:'Karotten und Zwiebeln würfeln, anschwitzen. Cumin und Paprika kurz mitbraten. Rote Linsen und Gemüsebrühe dazugeben, 20 Min. köcheln. Mit dem Stabmixer pürieren für samtige Konsistenz. Mit Salz, Zitrone abschmecken. Mit einem Klecks griechischem Joghurt servieren.'},
+    {t:'Abendessen',n:'Käse-Gemüse-Quesadilla',d:'2 Vollkorn-Tortillas, 60g Käse, Paprika, Mais, Bohnen',k:580,p:28,c:68,f:20,
+     r:'Tortilla in die Pfanne, eine Hälfte mit geriebenem Käse belegen. Paprikawürfel, Mais und schwarze Bohnen drauf. Überklappen. Bei mittlerer Hitze 3 Min. pro Seite bis der Käse schmilzt und das Tortilla knusprig ist. In Stücke schneiden, mit Salsa und Guacamole.'},
+    {t:'Snack',n:'Skyr & Chiasamen-Pudding',d:'200g Skyr, 15g Chiasamen, 100g Beeren',k:320,p:28,c:32,f:8,
+     r:'Chiasamen in etwas Wasser oder Milch einrühren, 10 Min. quellen lassen. Mit Skyr vermischen. Beeren draufgeben. Wer Zeit hat: über Nacht in den Kühlschrank stellen – wird noch cremiger. Der Chia-Pudding-Skyr ist sättigend und liefert viele Omega-3-Fettsäuren.'}
+  ]}
+],
+
+vegan: [
+  {l:'Mo',meals:[
+    {t:'Frühstück',n:'Chia-Pudding mit Beeren & Nüssen',d:'40g Chiasamen, 300ml Hafermilch, 100g Beeren, 20g Mandeln, 30g Proteinpulver (vegan)',k:520,p:34,c:48,f:22,
+     r:'Chiasamen, Hafermilch und veganes Proteinpulver in einem Glas verrühren. Wichtig: nach 5 Min. nochmal rühren damit die Samen sich nicht klumpen. Abgedeckt über Nacht kühlen. Morgens Beeren und gehackte Mandeln drüber. Fertig in 2 Minuten Vorbereitung.'},
+    {t:'Mittagessen',n:'Tofu-Erdnuss-Bowl mit Reis',d:'250g fester Tofu, 150g Reis, Brokkoli, Paprika, Erdnusssoße',k:740,p:38,c:86,f:24,
+     r:'Tofu pressen und würfeln. Bei hoher Hitze mit Sojasoße knusprig braten. Reis kochen. Brokkoli und Paprika dampfgaren oder in der Pfanne rösten. Erdnusssoße: Erdnussmus, Sojasoße, Limette, Knoblauch, Chili und Wasser zu einer Soße rühren. Alles anrichten.'},
+    {t:'Abendessen',n:'Linsen-Dal mit Spinat',d:'200g rote Linsen, 300g Blattspinat, Kokosmilch light, Tomaten, Gewürze',k:620,p:34,c:78,f:14,
+     r:'Zwiebeln, Knoblauch und Ingwer in Öl anschwitzen. Kurkuma, Cumin, Garam Masala zugeben. Dosentomaten und Linsen hinzufügen. Mit Kokosmilch aufgießen, 20 Min. köcheln. Spinat einrühren und zusammenfallen lassen. Mit Zitronensaft und Salz abschmecken.'},
+    {t:'Snack',n:'Sojajoghurt & Nussbutter',d:'200g Sojajoghurt (natur), 1 EL Mandelbutter, 100g Beeren',k:330,p:18,c:32,f:16,
+     r:'Sojajoghurt in die Schüssel geben. Mandelbutter obenauf setzen. Beeren frisch oder aufgetaut drüber. Optional: Agavendicksaft oder Ahornsirup für Süße, Zimt für Wärme. Einfacher Snack der auch als schnelles Frühstück funktioniert.'}
+  ]},
+  {l:'Di',meals:[
+    {t:'Frühstück',n:'Haferporridge mit Proteinpulver',d:'80g Haferflocken, 300ml Hafermilch, 30g veganes Whey, Beeren',k:530,p:38,c:70,f:10,
+     r:'Hafermilch in einem Topf leicht erhitzen. Haferflocken einrühren und bei niedriger Hitze 5 Min. unter Rühren köcheln. Vom Herd nehmen, Proteinpulver unterrühren (nicht kochen – sonst denaturiert das Protein). Beeren drauf. Tipp: Prise Salz macht Porridge geschmackvoller.'},
+    {t:'Mittagessen',n:'Tempeh-Bowl mit Quinoa & Avocado',d:'200g Tempeh, 160g Quinoa (gek.), ½ Avocado, Kirschtomaten, Tahini',k:780,p:48,c:72,f:34,
+     r:'Quinoa kochen. Tempeh in Scheiben schneiden und in Sojasoße, Knoblauch und Ahornsirup marinieren. In der Pfanne beidseitig 4 Min. braten. Avocado in Scheiben schneiden. Alles im Bowl anrichten. Tahini-Dressing: Tahini, Zitrone, Wasser, Knoblauch, Salz verrühren.'},
+    {t:'Abendessen',n:'Schwarze Bohnen & Süßkartoffel',d:'200g schwarze Bohnen, 200g Süßkartoffel, Mais, Salsa, Koriander',k:620,p:26,c:106,f:6,
+     r:'Süßkartoffel würfeln und bei 200°C 25 Min. rösten. Bohnen aus der Dose abspülen und erhitzen. Mais abtropfen. Alles in einer Schüssel mischen. Frische Salsa drüber. Mit Limettensaft, Koriander und Chiliflocken abschmecken. Einfach und vollständig vegan.'},
+    {t:'Snack',n:'Edamame & Proteinshake',d:'150g Edamame, 30g veganes Protein, 300ml Hafermilch',k:440,p:46,c:28,f:14,
+     r:'Edamame kochen und aus der Schote drücken. Leicht salzen. Proteinshake: Pulver mit Hafermilch im Shaker mischen. Zusammen als Post-Workout-Snack ideal. Die Edamame liefern alle essentiellen Aminosäuren – einer der besten pflanzlichen Proteinquellen.'}
+  ]},
+  {l:'Mi',meals:[
+    {t:'Frühstück',n:'Overnight Oats mit Sojamilch',d:'80g Haferflocken, 250ml Sojamilch, 30g veganes Protein, 100g Beeren',k:500,p:36,c:64,f:10,
+     r:'Alle Zutaten außer Beeren in einem Glas mischen. Gut umrühren. Über Nacht kühlen. Morgens mit Beeren toppen. Sojamilch liefert mehr Protein als andere Pflanzenmilchen. Tipp: 1 TL Flohsamenschalen einrühren für extra Ballaststoffe und längere Sättigung.'},
+    {t:'Mittagessen',n:'Kichererbsen-Gemüse-Curry',d:'250g Kichererbsen, Kokosmilch light, Spinat, Tomaten, 150g Reis',k:720,p:28,c:104,f:16,
+     r:'Zwiebel, Knoblauch, Ingwer anschwitzen. Currypulver, Kurkuma, Garam Masala einrühren. Dosentomaten und Kichererbsen dazugeben. Kokosmilch einrühren, 15 Min. köcheln. Spinat am Ende einrühren. Mit Zitrone und Salz abschmecken. Mit Basmati und Koriander servieren.'},
+    {t:'Abendessen',n:'Tofu-Brokkoli-Stir-Fry',d:'250g fester Tofu, 300g Brokkoli, Karotten, Sojasoße, Knoblauch, Sesam',k:560,p:36,c:36,f:24,
+     r:'Tofu pressen, würfeln, in der Pfanne bei hoher Hitze knusprig braten. Beiseite stellen. Brokkoli und Karotten (in Scheiben) scharf anbraten. Knoblauch und Ingwer dazugeben. Soße: Sojasoße, Sesamöl, Reisessig, Stärke, Chili. Tofu zurück, Soße drüber, kurz schwenken.'},
+    {t:'Snack',n:'Nussmix & Sojajoghurt',d:'25g Nussmix, 200g Sojajoghurt',k:380,p:18,c:28,f:22,
+     r:'Sojajoghurt in eine Schüssel geben. Nussmix (Mandeln, Walnüsse, Cashews, Haselnüsse) grob hacken oder ganz lassen. Drüber streuen. Optional: Drizzle Agavendicksaft, frische Beeren oder Zimt. Gute Quelle für gesunde Fette und pflanzliches Protein.'}
+  ]},
+  {l:'Do',meals:[
+    {t:'Frühstück',n:'Grüner Smoothie Bowl',d:'30g veganes Protein, 200ml Sojamilch, Spinat, 1 Banane, 30g Granola',k:510,p:34,c:68,f:10,
+     r:'Proteinpulver, Sojamilch, eine Handvoll Spinat und die Banane im Mixer auf höchster Stufe 30 Sek. mixen bis alles glatt ist. Die Masse soll dicker sein als ein Smoothie – wenn nötig weniger Milch. In eine Schüssel geben, Granola drüber streuen.'},
+    {t:'Mittagessen',n:'Linsensalat mit Granatapfel',d:'200g Linsen (gek.), Granatapfelkerne, Petersilie, Zitrone, Olivenöl',k:640,p:30,c:82,f:18,
+     r:'Linsen (aus der Dose oder vorgekocht) abtropfen und abkühlen. Granatapfelkerne aus der Frucht herauslösen. Petersilie grob hacken. Alles mischen. Dressing: Olivenöl, Zitronensaft, Salz, Pfeffer, Prise Zimt. Mindestens 30 Min. durchziehen lassen.'},
+    {t:'Abendessen',n:'Jackfruit-Tacos mit Guacamole',d:'200g Jackfruit, 3 Mais-Tortillas, ½ Avocado, Salsa, Koriander',k:660,p:16,c:96,f:20,
+     r:'Junge Jackfruit aus der Dose abtropfen, mit Gabeln auseinanderzupfen. In der Pfanne mit Rauchpaprika, Cumin, Knoblauch anbraten bis sie leicht knusprig ist. Avocado zu Guacamole zerdrücken. Tortillas erwärmen, mit Jackfruit, Guacamole, Salsa und Koriander belegen.'},
+    {t:'Snack',n:'Hummus & Reiswaffeln',d:'100g Hummus, 4 Reiswaffeln, Gemüsesticks',k:360,p:14,c:44,f:16,
+     r:'Hummus in eine kleine Schüssel geben. Reiswaffeln und Gemüsesticks (Karotte, Gurke, Sellerie, Paprika) dazu. Zum Dippen und Aufstreichen. Einfach, portabel und sättigend. Hummus selbst machen: Kichererbsen, Tahini, Zitrone, Knoblauch, Olivenöl, Salz – alles mixen.'}
+  ]},
+  {l:'Fr',meals:[
+    {t:'Frühstück',n:'Protein-Porridge mit Walnüssen',d:'80g Haferflocken, 300ml Hafermilch, 30g veganes Protein, 15g Walnüsse',k:540,p:38,c:68,f:16,
+     r:'Hafermilch erhitzen, Haferflocken einrühren, 5 Min. köcheln. Vom Herd nehmen, Proteinpulver unterrühren. Walnüsse grob hacken und drüber streuen. Optional: Prise Zimt, Drizzle Ahornsirup oder etwas Kakao für eine Schokoladenversion.'},
+    {t:'Mittagessen',n:'Buddha Bowl mit Edamame',d:'150g Edamame, 160g Quinoa, Avocado, Gurke, Karotte, Sesam-Dressing',k:720,p:36,c:76,f:30,
+     r:'Quinoa kochen. Edamame aus der Schote drücken. Avocado würfeln, Gurke und Karotte schneiden. Bowl aufbauen: Quinoa als Basis, dann alle Zutaten kreisförmig anordnen. Dressing: Tahini, Sojasoße, Sesamöl, Limette, Ingwer, Wasser – alles verrühren.'},
+    {t:'Abendessen',n:'Linsen-Bolognese mit Pasta',d:'200g rote Linsen, 100g Vollkorn-Spaghetti, Tomatensauce, Gemüse',k:680,p:36,c:98,f:8,
+     r:'Pasta kochen. Zwiebeln, Karotten, Sellerie fein würfeln und anschwitzen. Rote Linsen, Dosentomaten und Gemüsebrühe dazugeben, 20 Min. köcheln bis die Linsen zerfallen. Mit Oregano, Basilikum, Salz, Pfeffer abschmecken. Über die Pasta geben, Hefeflocken drüber.'},
+    {t:'Snack',n:'Sojajoghurt & Mandeln',d:'200g Sojajoghurt, 20g Mandeln',k:310,p:18,c:22,f:16,
+     r:'Sojajoghurt in eine Schüssel geben. Mandeln (ganz oder gehackt) drüber streuen. Für eine süße Variante: Prise Zimt und Drizzle Agavendicksaft. Für eine herzhafte Variante: Prise Salz und Chiliflocken.'}
+  ]},
+  {l:'Sa',meals:[
+    {t:'Frühstück',n:'Veganer Protein-French-Toast',d:'3 Scheiben Vollkornbrot, Sojamilch-Ei-Ersatz, Zimt, Ahornsirup',k:520,p:24,c:76,f:12,
+     r:'Ei-Ersatz: 3 EL Kichererbsenmehl mit 200ml Sojamilch, Zimt und Vanille verquirlen. Brotscheiben kurz eintauchen. In beschichteter Pfanne mit Kokosöl beidseitig goldbraun braten. Mit Ahornsirup und frischen Beeren servieren. Kaum vom Original zu unterscheiden.'},
+    {t:'Mittagessen',n:'Mexikanische Tortilla-Bowl',d:'200g schwarze Bohnen, 150g Reis, Mais, Avocado, Salsa, Koriander',k:740,p:26,c:112,f:18,
+     r:'Reis kochen. Bohnen aus der Dose abspülen und erhitzen. Mais abtropfen. Avocado als Guacamole (mit Limette, Salz, Chiliflocken) oder in Würfeln. Alles in einer Schüssel anrichten. Frische Salsa oder Pico de Gallo drüber. Mit Koriander und Limettensaft abschließen.'},
+    {t:'Abendessen',n:'Tofu-Scramble mit Kurkuma',d:'300g Tofu, Zwiebeln, Paprika, Spinat, Kurkuma, Paprikapulver',k:540,p:38,c:24,f:28,
+     r:'Tofu mit den Händen grob zerbröseln. In der Pfanne mit Öl anbraten. Zwiebeln und Paprika separat anschwitzen, dann zum Tofu geben. Kurkuma, Paprikapulver, Schwarzes Kala Namak-Salz (riecht nach Ei!) zugeben. Spinat zum Schluss einrühren. Mit Vollkornbrot.'},
+    {t:'Snack',n:'Proteinriegel & Beeren',d:'1 veganer Proteinriegel, 150g Beeren',k:360,p:22,c:40,f:10,
+     r:'Einfach: veganen Proteinriegel essen und Beeren dazu. Für selbstgemachte Alternative: 100g Datteln, 60g Haferflocken, 40g Proteinpulver, 30g Nussmus, Prise Salz im Mixer verarbeiten, in Form pressen, kühlen und in Riegel schneiden.'}
+  ]},
+  {l:'So',meals:[
+    {t:'Frühstück',n:'Overnight Oats mit Chiasamen',d:'80g Haferflocken, 15g Chiasamen, 250ml Sojamilch, Beeren, Ahornsirup',k:510,p:22,c:72,f:14,
+     r:'Haferflocken, Chiasamen und Sojamilch in einem Glas verrühren. Drizzle Ahornsirup für Süße. Abdecken und über Nacht kühlen. Morgens durchrühren – die Masse hat sich verdickt. Mit Beeren toppen. Wer mehr Protein will: 30g veganes Pulver einrühren.'},
+    {t:'Mittagessen',n:'Tempeh-Gemüse-Currywrap',d:'200g Tempeh, 2 Vollkorn-Wraps, Avocado, Paprika, Curry-Hummus',k:720,p:40,c:76,f:28,
+     r:'Tempeh in Streifen schneiden und in Sojasoße und Currypulver marinieren. Scharf anbraten. Curry-Hummus: normalen Hummus mit Currypulver mischen. Wraps erwärmen. Hummus als Basis aufstreichen. Tempeh, Avocadoscheiben, Paprika und Spinat drauf. Einrollen.'},
+    {t:'Abendessen',n:'Kichererbsen-Spinat-Eintopf',d:'250g Kichererbsen, 300g Blattspinat, Tomaten, Knoblauch, Cumin',k:580,p:28,c:74,f:14,
+     r:'Knoblauch und Zwiebeln in Olivenöl anschwitzen. Cumin und Paprikapulver kurz mitrösten. Dosentomaten dazugeben, 5 Min. einkochen. Kichererbsen dazugeben, weitere 10 Min. Spinat einrühren und zusammenfallen lassen. Mit Zitronensaft, Salz und Pfeffer abschmecken.'},
+    {t:'Snack',n:'Nussbutter-Shake',d:'30g veganes Protein, 300ml Hafermilch, 1 EL Erdnussbutter',k:400,p:36,c:24,f:18,
+     r:'Alle Zutaten in einem Mixer 30 Sek. auf hoher Stufe mixen bis alles cremig ist. Wer keinen Mixer hat: Proteinpulver und Erdnussbutter erst trocken mischen, dann Hafermilch dazugeben und schütteln. Optional: Kakao für Schoko-Erdnuss-Variante.'}
+  ]}
+],
+
+omnivor: [
+  {l:'Mo',meals:[
+    {t:'Frühstück',n:'Rührei mit Hähnchen & Vollkornbrot',d:'3 Eier, 100g Hähnchenbrust, 1 Scheibe Vollkornbrot, Tomaten',k:500,p:56,c:20,f:22,
+     r:'Hähnchenbrust würfeln und in der Pfanne mit Olivenöl anbraten (4-5 Min.) bis gar. Eier verquirlen, zu den Hähnchenteilen geben, bei niedriger Hitze cremig stocken lassen. Mit Salz, Pfeffer, Paprikapulver würzen. Mit Vollkornbrot und Tomatenscheiben servieren.'},
+    {t:'Mittagessen',n:'Hähnchen-Quinoa-Bowl',d:'200g Hähnchenbrust, 160g Quinoa (gek.), Gurke, Paprika, Joghurt-Dressing',k:720,p:70,c:72,f:14,
+     r:'Hähnchenbrust mit Gewürzen (Knoblauch, Paprika, Cumin) einreiben. In der Pfanne 5-6 Min. je Seite braten oder im Ofen bei 180°C 20 Min. garen. Quinoa kochen. Alles in einer Schüssel anrichten. Dressing: Joghurt, Zitrone, Knoblauch, Olivenöl, Salz.'},
+    {t:'Abendessen',n:'Rinderhackfleisch-Gemüse-Pfanne',d:'200g mageres Rinderhack, Zucchini, Paprika, Tomaten, Kräuter',k:640,p:52,c:24,f:32,
+     r:'Hackfleisch in der Pfanne bei hoher Hitze krümelig braten. Zwiebeln und Knoblauch dazugeben. Zucchini und Paprika würfeln und mitbraten. Dosentomaten dazugeben, 10 Min. köcheln. Mit Oregano, Thymian, Salz und Pfeffer abschmecken. Auf Wunsch mit Käse überbacken.'},
+    {t:'Snack',n:'Quark mit Proteinpulver',d:'250g Magerquark, 25g Proteinpulver',k:320,p:52,c:14,f:4,
+     r:'Magerquark in eine Schüssel geben. Proteinpulver einsieben und glatt rühren. Bei Bedarf etwas Wasser oder Milch für cremige Konsistenz. Schneller, protein-reicher Snack. Tipp: Whey-Isolat löst sich besser als Konzentrat.'}
+  ]},
+  {l:'Di',meals:[
+    {t:'Frühstück',n:'Protein-Omelette mit Schinken',d:'4 Eier, 80g magerer Schinken, Paprika, Champignons',k:480,p:52,c:8,f:26,
+     r:'Schinken in Streifen schneiden. Champignons in Scheiben und Paprika würfeln in der Pfanne anbraten. Eier verquirlen und darübergießen. Wenn die Unterseite fest ist, Schinken auf eine Hälfte legen. Zuklappen und weitere 2 Min. garen. Mit frischen Kräutern servieren.'},
+    {t:'Mittagessen',n:'Putenbrust mit Süßkartoffel & Brokkoli',d:'200g Putenbrust, 200g Süßkartoffel, 250g Brokkoli, Olivenöl',k:680,p:60,c:60,f:16,
+     r:'Süßkartoffel würfeln, mit Olivenöl und Gewürzen bei 200°C 20 Min. rösten. Brokkoli letzten 10 Min. dazugeben. Putenbrust flach klopfen, mit Salz, Pfeffer und Paprika würzen. In der Pfanne 4-5 Min. je Seite braten. 5 Min. ruhen lassen, dann aufschneiden.'},
+    {t:'Abendessen',n:'Beef-Bowl mit Reis',d:'180g Rinderhüfte, 150g Reis (gek.), Zwiebeln, Sojasoße, Sesamöl',k:720,p:54,c:78,f:18,
+     r:'Rinderhüfte in dünne Streifen schneiden. In sehr heißer Pfanne mit Öl scharf anbraten (2-3 Min.) – nicht zu lang, sonst zäh. Zwiebeln separat anbraten. Soße: Sojasoße, Sesamöl, Knoblauch, Ingwer, Chili. Fleisch und Zwiebeln mischen, Soße drüber. Mit Reis.'},
+    {t:'Snack',n:'Cottage Cheese & Walnüsse',d:'200g Cottage Cheese, 15g Walnüsse',k:290,p:28,c:6,f:16,
+     r:'Cottage Cheese abschmecken mit Zitronensaft und Prise Salz. Walnüsse hacken und drüberstreuen. Einfacher Snack, der auch unterwegs gut funktioniert. Wer es süßer mag: Drizzle Honig und frische Beeren dazu.'}
+  ]},
+  {l:'Mi',meals:[
+    {t:'Frühstück',n:'Overnight Oats mit Whey',d:'80g Haferflocken, 200ml Milch, 30g Whey, 100g Beeren',k:520,p:44,c:68,f:10,
+     r:'Haferflocken, Whey und Milch in einem Glas verrühren. Abgedeckt über Nacht kühlstellen. Morgens nochmal durchrühren und Beeren draufgeben. Whey löst sich besser wenn man das Pulver vor der Milch einrührt. Mit Vanille-Whey schmeckt es fast wie Dessert.'},
+    {t:'Mittagessen',n:'Hähnchen-Caesar-Wrap',d:'180g Hähnchenbrust, 2 Vollkorn-Wraps, Romana-Salat, Caesar-Dressing',k:680,p:58,c:56,f:20,
+     r:'Hähnchenbrust würzen und in der Pfanne durchgaren. Abkühlen lassen und in Streifen schneiden. Romana-Salat grob schneiden. Wraps kurz in der Pfanne erwärmen. Caesar-Dressing: Joghurt, Zitrone, Worcestershire, Senf, Knoblauch, Parmesan. Alles einrollen.'},
+    {t:'Abendessen',n:'Lachs mit Kartoffeln & grünen Bohnen',d:'220g Lachs, 200g Kartoffeln, 200g grüne Bohnen, Dill',k:680,p:52,c:52,f:24,
+     r:'Kartoffeln kochen (20 Min.). Grüne Bohnen in Salzwasser 5 Min. blanchieren. Lachs mit Dill, Zitrone und Salz würzen. In der Pfanne 4 Min. je Seite oder im Ofen bei 180°C 15 Min. Mit Kartoffeln, Bohnen und einem Klecks Senf servieren.'},
+    {t:'Snack',n:'Skyr & Mandeln',d:'200g Skyr, 20g Mandeln',k:310,p:26,c:16,f:14,
+     r:'Skyr in eine Schüssel geben. Mandeln drüber streuen. Für mehr Crunch: Mandeln kurz trocken in der Pfanne rösten. Einfacher Alltagssnack ohne Vorbereitung – ideal ins Büro oder nach dem Training mitzunehmen.'}
+  ]},
+  {l:'Do',meals:[
+    {t:'Frühstück',n:'Spiegelei mit Speck & Avocado',d:'3 Eier, 60g magerer Speck, ½ Avocado, 1 Scheibe Vollkornbrot',k:560,p:38,c:20,f:36,
+     r:'Speck in der Pfanne ohne Öl knusprig braten. Speck beiseite stellen. In demselben Fett die Eier bei niedriger Hitze spiegeln. Avocado mit Zitrone und Salz zerdrücken. Alles auf dem Teller anrichten. Mit Schwarzen Pfeffer und Chiliflocken abschmecken.'},
+    {t:'Mittagessen',n:'Rindfleisch-Stir-Fry mit Brokkoli',d:'200g Rinderfilet, 300g Brokkoli, Karotten, Sojasoße, Ingwer, 100g Reis',k:700,p:60,c:60,f:20,
+     r:'Rinderfilet in dünne Streifen schneiden, scharf anbraten und beiseitestellen. Brokkoli-Röschen und Karottenscheiben im selben Wok/Pfanne scharf anbraten. Soße: Sojasoße, Austernsauce, Sesamöl, Ingwer, Knoblauch, Speisestärke. Fleisch zurück, alles schwenken.'},
+    {t:'Abendessen',n:'Putenbrust-Caprese',d:'250g Putenbrust, Mozzarella 60g, Tomaten, Basilikum, Balsamico',k:560,p:62,c:14,f:24,
+     r:'Putenbrust dünn aufschneiden oder als Schnitzel flach klopfen. Mit Olivenöl, Salz und Pfeffer würzen und in der Pfanne 4 Min. je Seite braten. Anrichten mit Mozzarellascheiben, Tomatenscheiben und Basilikumblättern. Balsamico-Reduktion drüber träufeln.'},
+    {t:'Snack',n:'Magerquark & Erdnussmus',d:'250g Magerquark, 1 EL Erdnussmus',k:320,p:34,c:12,f:14,
+     r:'Magerquark in eine Schüssel, Erdnussmus obenauf. Entweder untermischen oder so essen. Wer es süßer mag: Prise Zimt, Drizzle Honig. Wer mehr Volumen will: Mit etwas Wasser oder Milch cremiger machen.'}
+  ]},
+  {l:'Fr',meals:[
+    {t:'Frühstück',n:'Protein-Pancakes mit Hähnchen-Scramble',d:'80g Haferflocken, 3 Eier, 100g Hähnchenbrust (klein gewürfelt)',k:560,p:58,c:54,f:12,
+     r:'Hähnchenbrust klein würfeln und scharf anbraten. Beiseite stellen. Pancake-Teig: Haferflocken (gemahlen), Eier, Prise Salz, Schuss Milch. Pancakes braten. Hähnchen-Scramble: restliche Eier zu den Hähnchenwürfeln geben, cremig stocken lassen. Beides zusammen.'},
+    {t:'Mittagessen',n:'Gyros-Bowl mit Tzatziki',d:'200g Hähnchenfleisch, 150g Reis, Tomaten, Gurke, 100g Tzatziki',k:720,p:62,c:72,f:18,
+     r:'Hähnchen in Streifen, mit Gyros-Gewürzmischung (Oregano, Paprika, Knoblauch, Cumin, Chili, Zitrone) marinieren. Scharf in der Pfanne braten. Tzatziki: Joghurt, Gurke (geraspelt, ausgedrückt), Knoblauch, Olivenöl, Dill. Über dem Reis anrichten.'},
+    {t:'Abendessen',n:'Beef-Patty mit Süßkartoffel-Fries',d:'200g Rinderhack (80/20), 200g Süßkartoffel, Salat, Senf',k:680,p:48,c:54,f:28,
+     r:'Süßkartoffel in Sticks schneiden, mit Olivenöl und Gewürzen bei 200°C 25 Min. backen (einmal wenden). Hackfleisch zu einem Patty formen, mit Salz und Pfeffer würzen. In der Pfanne 4 Min. je Seite braten. Mit Salat, Senf und Süßkartoffel-Fries servieren.'},
+    {t:'Snack',n:'Hartkäse & Reiswaffeln',d:'60g Hartkäse, 4 Reiswaffeln',k:340,p:24,c:28,f:16,
+     r:'Hartkäse in Scheiben oder Würfel schneiden. Auf Reiswaffeln legen oder separat essen. Funktioniert auch mit Gouda, Emmentaler oder Parmesan. Für mehr Volumen: Gemüsesticks dazu. Einfacher Snack der auch auf Reisen oder im Büro gut funktioniert.'}
+  ]},
+  {l:'Sa',meals:[
+    {t:'Frühstück',n:'Großes Frühstück mit Ei & Wurst',d:'3 Eier, 60g magere Bratwurst, Tomaten, Champignons, Vollkornbrot',k:580,p:44,c:30,f:30,
+     r:'Bratwurst in Scheiben schneiden und in der Pfanne braten. Champignons dazugeben und anbraten. Kirschtomaten halbieren und kurz mitrösten. Eier nach Wahl (Spiegel oder Rührei) zubereiten. Alles auf einem großen Teller mit Vollkornbrot anrichten. Tolles Wochenend-Frühstück.'},
+    {t:'Mittagessen',n:'Hähnchenbrustfilet mit Quinoa-Salat',d:'250g Hähnchenbrust, 160g Quinoa, Rucola, Kirschtomaten, Parmesan',k:740,p:74,c:62,f:20,
+     r:'Hähnchenbrust mit Olivenöl, Knoblauch und Kräutern einreiben. Im Ofen bei 180°C 20-25 Min. garen. Quinoa kochen. Mit Rucola und halbierten Kirschtomaten mischen. Dressing: Olivenöl, Balsamico, Honig, Senf. Hähnchen aufschneiden, drauflegen, Parmesan hobeln.'},
+    {t:'Abendessen',n:'Lachs-Teriyaki mit Reis',d:'220g Lachs, 150g Reis, Brokkoli, Teriyaki-Soße',k:680,p:56,c:64,f:18,
+     r:'Teriyaki-Soße: Sojasoße, Mirin (oder Honig), Sake (oder Reisessig), Zucker kochen bis leicht eingedickt. Lachs in der Pfanne 4 Min. je Seite braten, letzte Minute Soße drübergeben und karamellisieren. Brokkoli dampfgaren. Mit Reis und Sesam servieren.'},
+    {t:'Snack',n:'Griechischer Joghurt & Nüsse',d:'200g griechischer Joghurt (2%), 15g Walnüsse',k:280,p:18,c:18,f:14,
+     r:'Griechischen Joghurt in eine Schüssel. Walnüsse grob hacken, drüberstreuen. Optional Honig und Zimt. Gute Kombination aus Protein (Joghurt) und gesunden Omega-3-Fetten (Walnüsse). Ideal abends als Snack – hält lange satt ohne viele Kalorien.'}
+  ]},
+  {l:'So',meals:[
+    {t:'Frühstück',n:'Avocado-Ei-Toast mit Speck',d:'2 Eier, 1 Avocado, 2 Scheiben Sauerteig, 40g Speck, Kirschtomaten',k:580,p:32,c:44,f:32,
+     r:'Speck knusprig braten. Sauerteigbrot toasten. Avocado zerdrücken und mit Zitronensaft, Salz und Chili würzen. Auf Toast verteilen. Eier nach Wahl zubereiten (pochiert macht es edler). Speck und halbierte Kirschtomaten drauflegen. Mit schwarzem Pfeffer abschließen.'},
+    {t:'Mittagessen',n:'Roastbeef-Bowl mit Linsen',d:'180g Roastbeef, 150g Linsen (gek.), Rucola, Senf-Dressing',k:680,p:64,c:48,f:22,
+     r:'Roastbeef aus der Packung oder selbst gebraten (Rinderhüfte: scharf anbraten, dann bei 120°C bis Kerntemperatur 55°C). In Scheiben oder Streifen schneiden. Linsen mit Rucola mischen. Dressing: Senf, Essig, Olivenöl, Honig, Salz. Roastbeef drauflegen.'},
+    {t:'Abendessen',n:'Hähnchen-Gemüse-Auflauf',d:'250g Hähnchenbrust, Zucchini, Paprika, Kirschtomaten, Feta 40g',k:580,p:60,c:22,f:22,
+     r:'Hähnchenbrust in Stücke schneiden, würzen. Mit Gemüsewürfeln in einer Auflaufform schichten. Olivenöl drüber träufeln. Bei 200°C 25-30 Min. backen. Letzten 5 Min. Feta zerbröseln und drüberstreuen. Mit frischem Basilikum garnieren.'},
+    {t:'Snack',n:'Proteinshake & Mandeln',d:'30g Whey, 300ml Milch, 20g Mandeln',k:380,p:42,c:18,f:16,
+     r:'Whey mit Milch im Shaker oder Mixer mischen. Mit Eiswürfeln wird es erfrischender. Mandeln separat essen. Idealer Post-Workout-Snack: schnelle Proteine aus Whey, gesunde Fette und Ballaststoffe aus Mandeln. Vanille-Whey mit Milch schmeckt fast wie Milchshake.'}
+  ]}
+]
+
+};
+
+var DIET_LABELS = {pescatarisch:'🐟 Pescetarisch', vegetarisch:'🥚 Vegetarisch', vegan:'🌱 Vegan', omnivor:'🥩 Mit Fleisch'};
+var currentDiet = localStorage.getItem('cutDiet')||'pescatarisch';
+var PLAN = PLANS[currentDiet];
+
+function setDiet(diet){
+  currentDiet = diet;
+  PLAN = PLANS[diet];
+  localStorage.setItem('cutDiet', diet);
+  renderDietPicker();
+  planDay = (new Date().getDay()+6)%7;
+  renderPlanTabs();
+  renderPlanMeals();
+}
+
+function renderDietPicker(){
+  var el = document.getElementById('diet-picker');
+  if(!el) return;
+  var opts = Object.keys(DIET_LABELS);
+  el.innerHTML = opts.map(function(d){
+    var sel = d === currentDiet;
+    return '<div onclick="setDiet(\''+d+'\')" style="flex:1;min-width:0;padding:10px 6px;border-radius:var(--r-md);border:1px solid '+(sel?'rgba(255,255,255,.35)':'var(--hairline-dark)')+';background:'+(sel?'rgba(255,255,255,.09)':'transparent')+';text-align:center;cursor:pointer;transition:all .15s">'
+      +'<div style="font-size:18px;margin-bottom:3px">'+DIET_LABELS[d].split(' ')[0]+'</div>'
+      +'<div style="font-size:10px;font-weight:600;color:'+(sel?'var(--on-dark)':'var(--on-dark-mute)')+';letter-spacing:0.2px;white-space:nowrap">'+DIET_LABELS[d].split(' ').slice(1).join(' ')+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ═══ NAVIGATION ═══
+function nav(id,btn){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  document.getElementById('s-'+id).classList.add('on');
+  document.querySelectorAll('.ni').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  window.scrollTo(0,0);
+}
+
+// ═══ DASHBOARD ═══
+function initDash(){
+  var now=new Date();
+  var days=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  var months=['Jan','Feb','M\u00e4r','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  document.getElementById('dash-date').textContent=days[now.getDay()]+', '+now.getDate()+'. '+months[now.getMonth()]+' '+now.getFullYear();
+  var diffMs=now-START_DATE;
+  var diffDays=Math.max(0,Math.floor(diffMs/86400000));
+  var week=Math.min(12,Math.floor(diffDays/7)+1);
+  var pct=Math.min(100,Math.round(diffDays/84*100));
+  var titles=['Rein damit.','Auf Kurs.','Nicht aufh\u00f6ren.','Halbzeit bald.','Mehr als die H\u00e4lfte.','Weiter.','Kein Zur\u00fcck.','Zielgerade.','Fast geschafft.','Letzte Meile.','Finale Phase.','Letzte Woche!'];
+  document.getElementById('dash-title').textContent=titles[Math.min(week-1,11)];
+  document.getElementById('dash-week-lbl').textContent='Woche '+week+' von 12';
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-bar').style.width=pct+'%';
+  renderWeekRow();
+  updateKcalDisplay();
+  renderWeightSection();
+}
+
+function renderWeekRow(){
+  var now=new Date();now.setHours(0,0,0,0);
+  var mon=new Date(now);mon.setDate(now.getDate()-((now.getDay()+6)%7));
+  var days=['Mo','Di','Mi','Do','Fr','Sa','So'];
+  var html='';
+  for(var i=0;i<7;i++){
+    var d=new Date(mon);d.setDate(mon.getDate()+i);
+    var ds=d.toLocaleDateString('de-DE');
+    var isToday=ds===TODAY;
+    var hadTraining=!!localStorage.getItem('cutTraining-'+ds);
+    var hadFood=!!localStorage.getItem('cutFood-'+ds);
+    var cls=isToday?'today':(hadTraining&&hadFood?'trained':hadFood?'ate':'');
+    var icon=hadTraining?'\ud83d\udcaa':(hadFood?'\ud83e\udd57':(isToday?'\u25c8':'\u00b7'));
+    html+='<div class="wday"><div class="wday-lbl">'+days[i]+'</div><div class="wday-cell '+cls+'">'+icon+'</div></div>';
+  }
+  document.getElementById('week-row').innerHTML=html;
+}
+
+function updateKcalDisplay(){
+  var tk=logs.reduce(function(s,e){return s+(e.k||0);},0);
+  var tp=logs.reduce(function(s,e){return s+(e.p||0);},0);
+  var tc=logs.reduce(function(s,e){return s+(e.c||0);},0);
+  var tf=logs.reduce(function(s,e){return s+(e.f||0);},0);
+  var kpct=Math.min(100,Math.round(tk/GOAL.kcal*100));
+  var kcolor=tk>GOAL.kcal?'var(--acc-red)':tk>=GOAL.kcal*.9?'var(--on-dark)':'var(--acc-orange)';
+  document.getElementById('kcal-fraction').textContent=tk+' / '+GOAL.kcal;
+  document.getElementById('kcal-bar').style.width=kpct+'%';
+  document.getElementById('kcal-bar').style.background=kcolor;
+  document.getElementById('d-p').textContent=tp+'g';
+  document.getElementById('d-c').textContent=tc+'g';
+  document.getElementById('d-f').textContent=tf+'g';
+  document.getElementById('d-p-bar').style.width=Math.min(100,Math.round(tp/GOAL.p*100))+'%';
+  document.getElementById('d-c-bar').style.width=Math.min(100,Math.round(tc/GOAL.c*100))+'%';
+  document.getElementById('d-f-bar').style.width=Math.min(100,Math.round(tf/GOAL.f*100))+'%';
+}
+
+function renderWeightSection(){
+  if(!weightLog.length){
+    document.getElementById('cur-weight').textContent='\u2014';
+    document.getElementById('weight-change').innerHTML='';
+    document.getElementById('weight-list').innerHTML='<div style="font-size:14px;color:var(--on-dark-mute)">Noch kein Gewicht eingetragen.</div>';
+    return;
+  }
+  var sorted=weightLog.slice().sort(function(a,b){return b.ts-a.ts;});
+  var latest=sorted[0];
+  document.getElementById('cur-weight').textContent=latest.w.toFixed(1);
+  var lost=START_WEIGHT-latest.w;
+  var chEl=document.getElementById('weight-change');
+  if(lost>0) chEl.innerHTML='<span class="badge badge-green">\u25bc '+lost.toFixed(1)+' kg verloren</span>';
+  else if(lost<0) chEl.innerHTML='<span class="badge badge-red">\u25b2 '+Math.abs(lost).toFixed(1)+' kg zugenommen</span>';
+  else chEl.innerHTML='';
+  var html='';
+  sorted.slice(0,6).forEach(function(e,i){
+    var prev=sorted[i+1];
+    var diff=prev?e.w-prev.w:null;
+    var diffHtml='';
+    if(diff!==null){
+      var dc=diff<0?'wt-dn':diff>0?'wt-up':'wt-eq';
+      var ds=diff<0?'\u25bc '+Math.abs(diff).toFixed(1):diff>0?'\u25b2 '+diff.toFixed(1):'=';
+      diffHtml='<span class="wt-diff '+dc+'">'+ds+' kg</span>';
+    }
+    var col=e.w<(prev?prev.w:START_WEIGHT)?'var(--acc-green)':'var(--on-dark)';
+    html+='<div class="wt-entry"><div class="wt-date">'+e.date+'</div><div class="wt-val" style="flex:1;color:'+col+'">'+e.w.toFixed(1)+' <span style="font-size:14px;color:var(--on-dark-mute)">kg</span></div>'+diffHtml+'<button onclick="deleteWeight('+e.ts+')" class="log-del">\xd7</button></div>';
+  });
+  document.getElementById('weight-list').innerHTML=html;
+}
+
+function showWeightModal(){
+  document.getElementById('weight-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('wt-inp').focus();},100);
+}
+function hideWeightModal(){document.getElementById('weight-modal').style.display='none';}
+function saveWeight(){
+  var v=parseFloat(document.getElementById('wt-inp').value);
+  if(!v||v<30||v>300){showToast('Ung\u00fcltiger Wert');return;}
+  weightLog.unshift({w:v,date:TODAY,ts:Date.now()});
+  localStorage.setItem('cutWeight',JSON.stringify(weightLog));
+  document.getElementById('wt-inp').value='';
+  hideWeightModal();
+  renderWeightSection();
+  showToast('Gewicht gespeichert \u2713');
+}
+function deleteWeight(ts){
+  weightLog=weightLog.filter(function(e){return e.ts!==ts;});
+  localStorage.setItem('cutWeight',JSON.stringify(weightLog));
+  renderWeightSection();
+}
+
+// ═══ ESSEN ═══
+var pendingMacros=null,planDay=0,essenMode='text';
+
+function initEssen(){
+  var now=new Date();
+  var days=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  document.getElementById('essen-date').textContent=days[now.getDay()]+', '+TODAY;
+  document.getElementById('log-date-lbl').textContent='Heute geloggt \u2013 '+TODAY;
+  planDay=(new Date().getDay()+6)%7;
+  renderDietPicker();
+  renderPlanTabs();
+  renderPlanMeals();
+  renderLogList();
+}
+
+function renderPlanTabs(){
+  var html='<div style="display:flex;gap:5px;overflow-x:auto;padding-bottom:2px">';
+  PLAN.forEach(function(d,i){
+    var sel=i===planDay;
+    html+='<div onclick="setPlanDay('+i+')" id="ptab-'+i+'" style="flex-shrink:0;padding:6px 14px;border-radius:var(--r-full);border:1px solid '+(sel?'rgba(255,255,255,.3)':'var(--hairline-dark)')+';background:'+(sel?'rgba(255,255,255,.1)':'transparent')+';font-size:12px;font-weight:600;color:'+(sel?'var(--on-dark)':'var(--on-dark-mute)')+';cursor:pointer;letter-spacing:0.16px">'+d.l+'</div>';
+  });
+  html+='</div>';
+  document.getElementById('plan-tabs').innerHTML=html;
+}
+
+function setPlanDay(i){
+  planDay=i;
+  renderPlanTabs();
+  renderPlanMeals();
+}
+
+function renderPlanMeals(){
+  var day=PLAN[planDay];
+  document.getElementById('plan-meals').innerHTML=day.meals.map(function(m,i){
+    var rezBtn=m.r?('<div onclick="showRezept('+planDay+','+i+')" style="font-size:11px;font-weight:600;color:var(--on-dark-mute);background:rgba(255,255,255,.06);border:1px solid var(--hairline-dark);border-radius:var(--r-full);padding:4px 10px;cursor:pointer;text-align:center">Rezept</div>'):'';
+    var logBtn='<div onclick="quickLogMeal('+planDay+','+i+')" style="font-size:11px;font-weight:600;color:var(--primary-bright);background:rgba(73,79,223,.12);border:1px solid rgba(73,79,223,.25);border-radius:var(--r-full);padding:4px 10px;cursor:pointer;text-align:center">+ Log</div>';
+    return '<div class="meal-card">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:3px">'+m.t+'</div>'
+      +'<div style="font-size:15px;font-weight:500;line-height:1.3;margin-bottom:4px;letter-spacing:-0.1px">'+m.n+'</div>'
+      +'<div style="font-size:13px;color:var(--on-dark-mute);line-height:1.4;margin-bottom:10px">'+m.d+'</div>'
+      +'<div style="display:flex;gap:12px">'
+      +'<span style="font-size:12px;font-weight:600;color:var(--acc-green)">P:'+m.p+'g</span>'
+      +'<span style="font-size:12px;font-weight:600;color:var(--acc-orange)">C:'+m.c+'g</span>'
+      +'<span style="font-size:12px;font-weight:600;color:#69b1ff">F:'+m.f+'g</span>'
+      +'</div></div>'
+      +'<div style="text-align:right;flex-shrink:0;margin-left:14px">'
+      +'<div style="font-size:28px;font-weight:600;line-height:1;letter-spacing:-0.5px">'+m.k+'</div>'
+      +'<div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px;margin-top:2px">kcal</div>'
+      +'<div style="display:flex;flex-direction:column;gap:5px;margin-top:8px">'+logBtn+rezBtn+'</div>'
+      +'</div></div></div>';
+  }).join('');
+}
+
+function showRezept(di, mi){
+  var m = PLAN[di].meals[mi];
+  document.getElementById('rezept-type').textContent = m.t;
+  document.getElementById('rezept-name').textContent = m.n;
+  document.getElementById('rezept-zutaten').textContent = m.d;
+  document.getElementById('rezept-text').textContent = m.r || '';
+  document.getElementById('rezept-macros').innerHTML =
+    '<span style="font-size:12px;font-weight:600;color:var(--on-dark);background:rgba(255,255,255,.08);padding:4px 10px;border-radius:var(--r-full)">'+m.k+' kcal</span>'+
+    '<span style="font-size:12px;font-weight:600;color:var(--acc-green);background:rgba(0,168,126,.1);padding:4px 10px;border-radius:var(--r-full)">P '+m.p+'g</span>'+
+    '<span style="font-size:12px;font-weight:600;color:var(--acc-orange);background:rgba(236,126,0,.1);padding:4px 10px;border-radius:var(--r-full)">C '+m.c+'g</span>'+
+    '<span style="font-size:12px;font-weight:600;color:#69b1ff;background:rgba(105,177,255,.1);padding:4px 10px;border-radius:var(--r-full)">F '+m.f+'g</span>';
+  var logBtn = document.getElementById('rezept-log-btn');
+  logBtn.onclick = function(){ quickLogMeal(di, mi); hideRezept(); };
+  var modal = document.getElementById('rezept-modal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function hideRezept(){
+  document.getElementById('rezept-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+
+
+function quickLogMeal(di,mi){
+  var m=PLAN[di].meals[mi];
+  logs.push({n:m.n,k:m.k,p:m.p,c:m.c,f:m.f,t:m.t,id:Date.now()});
+  saveLogs();renderLogList();updateKcalDisplay();
+  showToast('Geloggt: '+m.n.substring(0,20)+'...');
+}
+
+function renderLogList(){
+  var el=document.getElementById('log-list');
+  if(!logs.length){el.innerHTML='<div style="font-size:14px;color:var(--on-dark-mute)">Noch keine Eintr\u00e4ge heute.</div>';return;}
+  var totK=logs.reduce(function(s,e){return s+(e.k||0);},0);
+  var totP=logs.reduce(function(s,e){return s+(e.p||0);},0);
+  var totC=logs.reduce(function(s,e){return s+(e.c||0);},0);
+  var totF=logs.reduce(function(s,e){return s+(e.f||0);},0);
+  var kpct=Math.min(100,Math.round(totK/GOAL.kcal*100));
+  var kcolor=totK>GOAL.kcal?'var(--acc-red)':totK>=GOAL.kcal*.9?'var(--on-dark)':'var(--acc-orange)';
+  var html=logs.map(function(e){
+    var ts=new Date(e.id).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    return '<div class="log-item"><div style="flex:1;min-width:0"><div class="log-name">'+e.n+'</div><div class="log-meta">'+e.t+' \u00b7 '+ts+' \u00b7 P:'+e.p+'g C:'+e.c+'g F:'+e.f+'g</div></div><div class="log-kcal">'+e.k+'</div><button class="log-del" onclick="delLog('+e.id+')">\xd7</button></div>';
+  }).join('');
+  html+='<div class="log-total-row"><div style="font-size:11px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px">Tagesgesamt</div><div style="font-size:20px;font-weight:600;color:'+kcolor+';letter-spacing:-0.3px">'+totK+' <span style="font-size:13px;color:var(--on-dark-mute)">/ '+GOAL.kcal+'</span></div></div>';
+  html+='<div class="pbar" style="margin-bottom:8px"><div class="pfill" style="width:'+kpct+'%;background:'+kcolor+'"></div></div>';
+  html+='<div style="display:flex;gap:14px"><span style="font-size:12px;font-weight:600;color:var(--acc-green)">P: '+totP+'g</span><span style="font-size:12px;font-weight:600;color:var(--acc-orange)">C: '+totC+'g</span><span style="font-size:12px;font-weight:600;color:#69b1ff">F: '+totF+'g</span></div>';
+  el.innerHTML=html;
+}
+
+function saveLogs(){
+  localStorage.setItem('cutLogs',JSON.stringify(logs));
+  var totK=logs.reduce(function(s,e){return s+(e.k||0);},0);
+  if(totK>0)localStorage.setItem('cutFood-'+TODAY,'1');
+}
+function delLog(id){logs=logs.filter(function(e){return e.id!==id;});saveLogs();renderLogList();updateKcalDisplay();}
+
+function addLog(){
+  if(!pendingMacros)return;
+  var ml=document.getElementById('meal-type').value;
+  var n;
+  if(essenMode==='foto'){var ni=document.getElementById('foto-name-inp');n=ni&&ni.value.trim()?ni.value.trim():'Foto-Mahlzeit';}
+  else{var ln=document.getElementById('food-name');n=ln&&ln.value.trim()?ln.value.trim():'Mahlzeit';}
+  logs.push({n:n,k:pendingMacros.k,p:pendingMacros.p,c:pendingMacros.c,f:pendingMacros.f,t:ml,id:Date.now()});
+  saveLogs();resetMacroUI();renderLogList();updateKcalDisplay();
+  if(essenMode==='text'){var lnEl=document.getElementById('food-name');if(lnEl)lnEl.value='';var lqEl=document.getElementById('food-qty');if(lqEl)lqEl.value='';}
+  else{resetFotoUI();}
+  setNote('','');
+  showToast('Eingetragen \u2713');
+}
+
+function setEssenMode(m){
+  essenMode=m;
+  document.getElementById('md-text').style.display=m==='text'?'block':'none';
+  document.getElementById('md-foto').style.display=m==='foto'?'block':'none';
+  var tb=document.getElementById('mode-text-btn');
+  var fb=document.getElementById('mode-foto-btn');
+  if(tb)tb.classList.toggle('on',m==='text');
+  if(fb)fb.classList.toggle('on',m==='foto');
+  resetMacroUI();
+  setNote('','');
+  var frb=document.getElementById('foto-result-box');
+  if(frb)frb.style.display='none';
+}
+
+// Foto-Upload
+var foodFotoBase64=null;
+function onFoodFoto(inp){
+  var f=inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    foodFotoBase64=e.target.result.split(',')[1];
+    var prev=document.getElementById('food-foto-prev');if(prev){prev.src=e.target.result;prev.style.display='block';}
+    var ph=document.getElementById('food-foto-ph');if(ph)ph.style.display='none';
+    var fc=document.getElementById('food-foto-change');if(fc)fc.style.display='block';
+    var btn=document.getElementById('foto-calc-btn');if(btn)btn.disabled=false;
+    var txt=document.getElementById('foto-calc-txt');if(txt)txt.textContent='\u2736 Kalorien aus Foto berechnen';
+    resetMacroUI();setNote('','');
+    var frb=document.getElementById('foto-result-box');if(frb)frb.style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+
+function resetFotoUI(){
+  foodFotoBase64=null;
+  var prev=document.getElementById('food-foto-prev');if(prev)prev.style.display='none';
+  var ph=document.getElementById('food-foto-ph');if(ph)ph.style.display='flex';
+  var fc=document.getElementById('food-foto-change');if(fc)fc.style.display='none';
+  var btn=document.getElementById('foto-calc-btn');if(btn)btn.disabled=true;
+  var txt=document.getElementById('foto-calc-txt');if(txt)txt.textContent='\ud83d\udcf8 Zuerst Foto hochladen';
+  var fri=document.getElementById('food-foto-inp');if(fri)fri.value='';
+  var frb=document.getElementById('foto-result-box');if(frb)frb.style.display='none';
+}
+
+function resetMacroUI(){
+  ['k','p','c','f'].forEach(function(id){
+    var v=document.getElementById('mpv-'+id),b=document.getElementById('mpb-'+id);
+    if(v){v.textContent='\u2014';v.className='mpv em';}
+    if(b)b.classList.remove('lit');
+  });
+  var lb=document.getElementById('log-btn');if(lb)lb.disabled=true;
+  pendingMacros=null;
+}
+function setMacroUI(m){
+  var vals={k:m.k+' kcal',p:m.p+'g',c:m.c+'g',f:m.f+'g'};
+  Object.keys(vals).forEach(function(id){
+    var v=document.getElementById('mpv-'+id),b=document.getElementById('mpb-'+id);
+    if(v){v.textContent=vals[id];v.className='mpv';}
+    if(b)b.classList.add('lit');
+  });
+  var lb=document.getElementById('log-btn');if(lb)lb.disabled=false;
+}
+function setNote(msg,type){
+  var el=document.getElementById('calc-note');
+  if(!el)return;
+  el.textContent=msg;el.style.display=msg?'block':'none';
+  el.className='ainote'+(type?' '+type:'');
+}
+
+// ═══ API KEY ═══
+var API_KEY = localStorage.getItem('cutApiKey') || '';
+
+function saveApiKey(){
+  var inp = document.getElementById('api-key-inp');
+  var key = inp ? inp.value.trim() : '';
+  if(!key || !key.startsWith('sk-')){
+    showToast('Bitte gültigen API-Key eingeben');
+    return;
+  }
+  API_KEY = key;
+  localStorage.setItem('cutApiKey', key);
+  hideApiSetup();
+}
+
+function skipApiKey(){
+  hideApiSetup();
+}
+
+function hideApiSetup(){
+  var el = document.getElementById('api-setup');
+  if(el) el.style.display = 'none';
+}
+
+function showApiSetup(){
+  var el = document.getElementById('api-setup');
+  if(el){ el.style.display = 'flex'; }
+}
+
+// ═══ KI API CALLS ═══
+function apiCall(prompt, maxTokens, imageData, callback) {
+  if(!API_KEY){
+    showApiSetup();
+    callback(new Error('Kein API-Key'), null);
+    return;
+  }
+  var messages;
+  if(imageData){
+    messages=[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageData}},
+      {type:'text',text:prompt}
+    ]}];
+  } else {
+    messages=[{role:'user',content:prompt}];
+  }
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': API_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-allow-browser': 'true'
+    },
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:messages})
+  }).then(function(r){return r.json();}).then(function(data){
+    if(data.error){callback(new Error(data.error.message),null);return;}
+    var raw=data.content&&data.content.find(function(b){return b.type==='text';})?data.content.find(function(b){return b.type==='text';}).text:'';
+    callback(null,raw);
+  }).catch(function(e){callback(e,null);});
+}
+
+function calcMacros(){
+  var name=document.getElementById('food-name').value.trim();
+  var qty=document.getElementById('food-qty').value.trim();
+  if(!name){showToast('Bitte Mahlzeit eingeben');return;}
+  var btn=document.getElementById('calc-btn');
+  var spin=document.getElementById('calc-spin');
+  var txt=document.getElementById('calc-txt');
+  btn.disabled=true;spin.classList.add('on');txt.textContent='Berechne...';
+  setNote('','');resetMacroUI();
+  var prompt='Nährwerte für "'+name+'" Menge "'+(qty||'1 Portion')+'". Nur JSON ohne Markdown: {"kcal":Z,"protein":Z,"carbs":Z,"fat":Z}';
+  apiCall(prompt,150,null,function(err,raw){
+    if(!err){
+      var match=raw.match(/\{[^}]+\}/);
+      if(match){
+        var p=JSON.parse(match[0]);
+        pendingMacros={k:Math.round(p.kcal),p:Math.round(p.protein),c:Math.round(p.carbs),f:Math.round(p.fat)};
+        setMacroUI(pendingMacros);
+        setNote('Nährwerte berechnet!','ok');
+      } else {setNote('Fehler – bitte nochmal.','err');}
+    } else {setNote('Fehler – bitte nochmal.','err');}
+    btn.disabled=false;spin.classList.remove('on');txt.textContent='\u2736 Kalorien berechnen';
+  });
+}
+
+function calcMacrosFoto(){
+  if(!foodFotoBase64){showToast('Zuerst Foto hochladen');return;}
+  var btn=document.getElementById('foto-calc-btn');
+  var spin=document.getElementById('foto-calc-spin');
+  var txt=document.getElementById('foto-calc-txt');
+  btn.disabled=true;spin.classList.add('on');txt.textContent='Analysiere...';
+  setNote('','');resetMacroUI();
+  var prompt='Analysiere dieses Essensfoto. Erkenne alle Zutaten und Portionen. Nur JSON ohne Markdown: {"name":"Mahlzeitname","erkannt":"Zutaten mit Mengen","kcal":Z,"protein":Z,"carbs":Z,"fat":Z}';
+  apiCall(prompt,400,foodFotoBase64,function(err,raw){
+    if(!err){
+      var match=raw.match(/\{[\s\S]*?\}/);
+      if(match){
+        var p=JSON.parse(match[0]);
+        pendingMacros={k:Math.round(p.kcal),p:Math.round(p.protein),c:Math.round(p.carbs),f:Math.round(p.fat)};
+        var ni=document.getElementById('foto-name-inp');if(ni)ni.value=p.name||'';
+        var zi=document.getElementById('foto-zutaten-inp');if(zi)zi.value=p.erkannt||'';
+        var ln=document.getElementById('food-name');if(ln)ln.value=p.name||'';
+        document.getElementById('foto-result-box').style.display='block';
+        setMacroUI(pendingMacros);setNote('Analysiert – pr\u00fcfen & ggf. korrigieren!','ok');
+      } else {setNote('Analyse fehlgeschlagen.','err');}
+    } else {setNote('Analyse fehlgeschlagen.','err');}
+    btn.disabled=false;spin.classList.remove('on');txt.textContent='\u2736 Aus Foto berechnen';
+  });
+}
+
+function recalcFoto(){
+  var ni=document.getElementById('foto-name-inp');
+  var zi=document.getElementById('foto-zutaten-inp');
+  var nm=ni?ni.value.trim():'';
+  var zt=zi?zi.value.trim():'';
+  if(!nm&&!zt){showToast('Name oder Zutaten eingeben');return;}
+  var btn=document.getElementById('foto-recalc-btn');
+  var spin=document.getElementById('foto-recalc-spin');
+  var txt=document.getElementById('foto-recalc-txt');
+  btn.disabled=true;spin.classList.add('on');txt.textContent='Berechne...';
+  resetMacroUI();
+  var prompt='Nährwerte für "'+nm+'" Zutaten: "'+zt+'". Nur JSON: {"kcal":Z,"protein":Z,"carbs":Z,"fat":Z}';
+  apiCall(prompt,150,null,function(err,raw){
+    if(!err){
+      var match=raw.match(/\{[^}]+\}/);
+      if(match){
+        var p=JSON.parse(match[0]);
+        pendingMacros={k:Math.round(p.kcal),p:Math.round(p.protein),c:Math.round(p.carbs),f:Math.round(p.fat)};
+        if(nm){var fn=document.getElementById('food-name');if(fn)fn.value=nm;}
+        setMacroUI(pendingMacros);setNote('Neu berechnet \u2713','ok');
+      } else {setNote('Fehler – bitte nochmal.','err');}
+    } else {setNote('Fehler – bitte nochmal.','err');}
+    btn.disabled=false;spin.classList.remove('on');txt.textContent='\u21bb Neu berechnen';
+  });
+}
+
+// ═══ TRAINING ═══
+var woImgBase64=null,lastWoAnalysis='';
+
+function initTraining(){
+  var now=new Date();
+  var days=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  document.getElementById('training-date').textContent=days[now.getDay()]+', '+TODAY;
+  document.getElementById('training-log-lbl').textContent='Heute trainiert \u2013 '+TODAY;
+  renderTrainingLog();
+}
+
+function onWoImg(inp){
+  var f=inp.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    woImgBase64=e.target.result.split(',')[1];
+    var prev=document.getElementById('wo-preview');prev.src=e.target.result;prev.style.display='block';
+    document.getElementById('upload-ph').style.display='none';
+    document.getElementById('upload-change').style.display='block';
+    var btn=document.getElementById('analyze-btn');btn.disabled=false;
+    document.getElementById('analyze-txt').textContent='\u2736 Workout analysieren';
+    document.getElementById('wo-result').style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+
+function analyzeWo(){
+  if(!woImgBase64){showToast('Zuerst Screenshot hochladen');return;}
+  var btn=document.getElementById('analyze-btn');
+  var spin=document.getElementById('analyze-spin');
+  var txt=document.getElementById('analyze-txt');
+  btn.disabled=true;spin.classList.add('on');txt.textContent='Analysiere...';
+  var prompt='Analysiere diesen Workout-Screenshot. Liste alle Übungen mit Sätzen, Gewichten und Wiederholungen auf. Format: strukturierte Liste auf Deutsch, kompakt. Berechne Gesamtvolumen.';
+  apiCall(prompt,600,woImgBase64,function(err,raw){
+    if(!err&&raw){
+      lastWoAnalysis=raw;
+      document.getElementById('wo-result-text').textContent=raw;
+      document.getElementById('wo-result').style.display='block';
+    } else {showToast('Analyse fehlgeschlagen');}
+    btn.disabled=false;spin.classList.remove('on');txt.textContent='\u2736 Workout analysieren';
+  });
+}
+
+function saveWoFromAnalysis(){
+  trainingLogs.unshift({type:'kraft',summary:lastWoAnalysis.substring(0,200),date:TODAY,ts:Date.now()});
+  saveTrainingLogs();renderTrainingLog();
+  document.getElementById('wo-result').style.display='none';
+  document.getElementById('wo-preview').style.display='none';
+  document.getElementById('upload-ph').style.display='flex';
+  document.getElementById('upload-change').style.display='none';
+  woImgBase64=null;
+  document.getElementById('analyze-btn').disabled=true;
+  document.getElementById('analyze-txt').textContent='\ud83d\udcf8 Zuerst Screenshot hochladen';
+  showToast('Training gespeichert \u2713');
+}
+
+function addCardio(){
+  var type=document.getElementById('cardio-type').value;
+  var dur=parseInt(document.getElementById('cardio-dur').value);
+  var intensity=document.getElementById('cardio-intensity').value;
+  var note=document.getElementById('cardio-note').value.trim();
+  if(!dur||dur<1){showToast('Bitte Dauer eingeben');return;}
+  var intLabel={low:'Locker',mid:'Moderat',high:'Intensiv'}[intensity];
+  trainingLogs.unshift({type:'cardio',activity:type,dur:dur,intensity:intLabel,note:note,date:TODAY,ts:Date.now()});
+  saveTrainingLogs();renderTrainingLog();
+  document.getElementById('cardio-dur').value='';
+  document.getElementById('cardio-note').value='';
+  showToast(type+' '+dur+' Min. gespeichert \u2713');
+}
+
+function saveTrainingLogs(){
+  var todayLogs=trainingLogs.filter(function(e){return e.date===TODAY;});
+  localStorage.setItem('cutTraining',JSON.stringify(trainingLogs));
+  if(todayLogs.length)localStorage.setItem('cutTraining-'+TODAY,'1');
+}
+
+function renderTrainingLog(){
+  var el=document.getElementById('training-log');
+  var todayLogs=trainingLogs.filter(function(e){return e.date===TODAY;});
+  if(!todayLogs.length){el.innerHTML='<div style="font-size:14px;color:var(--on-dark-mute)">Noch kein Training heute.</div>';return;}
+  el.innerHTML=todayLogs.map(function(e){
+    if(e.type==='cardio'){
+      return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hairline-dark)">'
+        +'<div style="font-size:24px">'+e.activity.substring(0,2)+'</div>'
+        +'<div style="flex:1"><div style="font-size:14px;font-weight:500">'+e.activity.substring(3)+' \u00b7 '+e.dur+' Min.</div>'
+        +'<div style="font-size:12px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px">'+e.intensity+(e.note?' \u00b7 '+e.note:'')+'</div></div>'
+        +'<span class="badge badge-green">Cardio</span></div>';
+    } else {
+      return '<div style="padding:12px 0;border-bottom:1px solid var(--hairline-dark)">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+        +'<div style="font-size:14px;font-weight:500;flex:1">Krafttraining</div>'
+        +'<span class="badge" style="background:rgba(255,255,255,.08);color:var(--on-dark-mute)">Kraft</span></div>'
+        +'<div style="font-size:12px;color:var(--on-dark-mute);line-height:1.6;white-space:pre-wrap">'+e.summary+'</div></div>';
+    }
+  }).join('');
+}
+
+// ═══ TOAST ═══
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('on');
+  setTimeout(function(){t.classList.remove('on');},2200);
+}
+
+// ═══ SPLASH ═══
+var PROFIL = JSON.parse(localStorage.getItem('cutProfil')||'{}');
+
+function startSplash(){
+  // Canvas Partikel
+  var canvas = document.getElementById('splash-canvas');
+  if(!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  if(!ctx) return;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  var particles = [];
+  for(var i=0;i<60;i++){
+    particles.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      r: Math.random()*1.5+0.5,
+      vx: (Math.random()-.5)*0.4,
+      vy: (Math.random()-.5)*0.4,
+      o: Math.random()*0.6+0.2
+    });
+  }
+
+  var animId;
+  function drawParticles(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(function(p){
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,'+p.o+')';
+      ctx.fill();
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=canvas.width;
+      if(p.x>canvas.width)p.x=0;
+      if(p.y<0)p.y=canvas.height;
+      if(p.y>canvas.height)p.y=0;
+    });
+    animId = requestAnimationFrame(drawParticles);
+  }
+  drawParticles();
+
+  // Animations-Sequenz
+  function animate(el, delay, props){
+    setTimeout(function(){
+      if(!el) return;
+      el.style.transition='opacity .7s ease, transform .7s ease';
+      el.style.opacity='1';
+      el.style.transform='none';
+      if(props) Object.keys(props).forEach(function(k){ el.style[k]=props[k]; });
+    }, delay);
+  }
+
+  animate(document.getElementById('splash-logo'), 300);
+  animate(document.getElementById('splash-headline'), 800);
+  animate(document.getElementById('splash-sub'), 1400);
+  animate(document.getElementById('splash-cta'), 1900);
+
+  // Ladebalken animieren
+  setTimeout(function(){
+    var bar = document.getElementById('splash-bar');
+    if(bar) bar.style.width='100%';
+  }, 2000);
+
+  // Nachricht wechseln
+  var msgs = [
+    'Du hast dich entschieden.\nDas war der schwerste Teil.',
+    'Lass die Ergebnisse\nfür dich sprechen.',
+    'Kein perfekter Tag.\nNur der nächste Schritt.'
+  ];
+  var msgEl = document.getElementById('splash-msg');
+  if(msgEl && PROFIL.name){
+    msgs[0] = PROFIL.name+', du hast dich entschieden.\nDas war der schwerste Teil.';
+  }
+  if(msgEl) msgEl.textContent = msgs[Math.floor(Math.random()*msgs.length)];
+
+  // Weiterleiten
+  setTimeout(function(){
+    cancelAnimationFrame(animId);
+    var splash = document.getElementById('splash');
+    if(!splash) return;
+    splash.style.transition = 'opacity .6s ease, transform .6s ease';
+    splash.style.opacity = '0';
+    splash.style.transform = 'scale(1.04)';
+    setTimeout(function(){
+      splash.style.display = 'none';
+    }, 600);
+  }, 3200);
+}
+
+// ═══ PROFIL ═══
+function initProfil(){
+  // Felder befüllen
+  var fields = {
+    'profil-name':    PROFIL.name||'',
+    'profil-weight':  PROFIL.weight||'',
+    'profil-target':  PROFIL.target||'90',
+    'profil-height':  PROFIL.height||'',
+    'profil-age':     PROFIL.age||'',
+    'profil-kcal':    PROFIL.kcal||'2650',
+    'profil-protein': PROFIL.protein||'200'
+  };
+  Object.keys(fields).forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = fields[id];
+  });
+  // Name anzeigen
+  var nd = document.getElementById('profil-name-disp');
+  if(nd) nd.textContent = PROFIL.name||'Dein Name';
+  // Avatar
+  if(PROFIL.avatar){
+    var img = document.getElementById('profil-avatar-img');
+    var ph  = document.getElementById('profil-avatar-ph');
+    if(img){ img.src=PROFIL.avatar; img.style.display='block'; }
+    if(ph)  ph.style.display='none';
+  }
+  // Programm-Stats
+  var now = new Date();
+  var diffMs = now - START_DATE;
+  var diffDays = Math.max(0, Math.floor(diffMs/86400000));
+  var daysLeft = Math.max(0, 84-diffDays);
+  var pct = Math.min(100, Math.round(diffDays/84*100));
+  var el = document.getElementById('prog-days-left');
+  if(el) el.textContent = daysLeft;
+  var pb = document.getElementById('prog-bar-profil');
+  if(pb) pb.style.width = pct+'%';
+  var pp = document.getElementById('prog-pct-profil');
+  if(pp) pp.textContent = pct+'%';
+  // kg abgenommen
+  var lost = 0;
+  if(weightLog.length){
+    var sorted = weightLog.slice().sort(function(a,b){return b.ts-a.ts;});
+    var sw = parseFloat(PROFIL.weight||START_WEIGHT);
+    lost = Math.max(0, sw - sorted[0].w);
+  }
+  var lostEl = document.getElementById('prog-lost');
+  if(lostEl) lostEl.textContent = lost.toFixed(1);
+}
+
+function saveProfile(){
+  var fields = ['profil-name','profil-weight','profil-target','profil-height','profil-age','profil-kcal','profil-protein'];
+  fields.forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) PROFIL[id.replace('profil-','')] = el.value;
+  });
+  localStorage.setItem('cutProfil', JSON.stringify(PROFIL));
+  // Ziele live aktualisieren
+  if(PROFIL.kcal)    GOAL.kcal    = parseInt(PROFIL.kcal)||2650;
+  if(PROFIL.protein) GOAL.p       = parseInt(PROFIL.protein)||200;
+  if(PROFIL.weight)  START_WEIGHT = parseFloat(PROFIL.weight)||104;
+  if(PROFIL.target)  TARGET_WEIGHT= parseFloat(PROFIL.target)||90;
+  // Name anzeigen
+  var nd = document.getElementById('profil-name-disp');
+  if(nd) nd.textContent = PROFIL.name||'Dein Name';
+}
+
+function loadAvatar(inp){
+  var f = inp.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(e){
+    PROFIL.avatar = e.target.result;
+    localStorage.setItem('cutProfil', JSON.stringify(PROFIL));
+    var img = document.getElementById('profil-avatar-img');
+    var ph  = document.getElementById('profil-avatar-ph');
+    if(img){ img.src=e.target.result; img.style.display='block'; }
+    if(ph)  ph.style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+
+function resetProgram(){
+  document.getElementById('reset-modal').style.display='flex';
+}
+
+function confirmReset(){
+  // Alle Daten löschen
+  localStorage.clear();
+  // State zurücksetzen
+  logs=[];trainingLogs=[];weightLog=[];
+  PROFIL={};
+  START_DATE=new Date();
+  currentDiet='pescatarisch';
+  PLAN=PLANS[currentDiet];
+  // Modal schließen
+  document.getElementById('reset-modal').style.display='none';
+  // Zurück zum Dashboard
+  var niButtons=document.querySelectorAll('.ni');
+  niButtons.forEach(function(b){b.classList.remove('on');});
+  if(niButtons[0])niButtons[0].classList.add('on');
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  var dash=document.getElementById('s-dash');
+  if(dash)dash.classList.add('on');
+  // Dashboard aktualisieren
+  initDash();
+  showToast('Daten gelöscht ✓');
+}
+
+// ═══ INIT ═══
+startSplash();
+initDash();
+// API-Key Setup beim allerersten Start (nach Splash)
+if(!API_KEY){
+  setTimeout(function(){
+    showApiSetup();
+  }, 3400);
+}
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){
+      console.log('SW registration failed:', e);
+    });
+  });
+}
+</script>
+</body>
+</html>
