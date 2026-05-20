@@ -317,7 +317,9 @@ textarea.inp { height: auto; resize: none; line-height: 1.5; }
   transition: all .2s;
 }
 .wday-cell.today { border-color: rgba(255,255,255,.4); color: var(--on-dark); background: rgba(255,255,255,.06); }
-.wday-cell.trained { background: var(--on-dark); border-color: var(--on-dark); color: var(--canvas-dark); }
+.wday-cell.trained { background: rgba(41,216,132,.2); border-color: rgba(41,216,132,.5); color: var(--acc-green); }
+.wday-cell.rest { background: rgba(74,158,255,.2); border-color: rgba(74,158,255,.5); color: var(--blue); }
+.wday-cell.missed { background: rgba(226,59,74,.15); border-color: rgba(226,59,74,.4); color: var(--acc-red); }
 .wday-cell.ate { background: rgba(73,79,223,.2); border-color: rgba(73,79,223,.4); color: var(--primary-bright); }
 
 /* ── MODE SWITCH ── */
@@ -457,8 +459,8 @@ textarea.inp { height: auto; resize: none; line-height: 1.5; }
     <div class="card">
       <!-- Mode Switch -->
       <div class="mode-switch">
-        <button id="mode-text-btn" onclick="setEssenMode('text')" style="flex:1;padding:9px;border-radius:var(--r-md);border:1px solid var(--on-dark);background:rgba(73,79,223,.15);color:var(--on-dark);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s">✍️ Text</button>
-        <button id="mode-foto-btn" onclick="setEssenMode('foto')" style="flex:1;padding:9px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.18);background:transparent;color:var(--on-dark-mute);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s">📷 Foto</button>
+        <button id="mode-text-btn" onclick="setEssenMode('text')" class="mode-opt on">✍️ Text</button>
+        <button id="mode-foto-btn" onclick="setEssenMode('foto')" class="mode-opt">📷 Foto</button>
       </div>
 
       <!-- TEXT MODUS -->
@@ -828,6 +830,29 @@ textarea.inp { height: auto; resize: none; line-height: 1.5; }
     <div style="font-size:14px;color:var(--on-dark-mute);line-height:1.5;margin-bottom:24px">Alle gespeicherten Daten werden gelöscht: Gewichtsverlauf, Trainingslog, Essenstracker und Einstellungen. Dieser Schritt kann nicht rückgängig gemacht werden.</div>
     <button onclick="confirmReset()" style="width:100%;padding:14px;background:var(--acc-red);color:#fff;border:none;border-radius:var(--r-full);font-size:15px;font-weight:600;letter-spacing:0.24px;cursor:pointer;margin-bottom:10px">Ja, alles löschen</button>
     <button onclick="document.getElementById('reset-modal').style.display='none'" style="width:100%;padding:14px;background:transparent;color:var(--on-dark-mute);border:1px solid var(--hairline-dark);border-radius:var(--r-full);font-size:15px;font-weight:600;cursor:pointer">Abbrechen</button>
+  </div>
+</div>
+
+<!-- Tag-Detail Modal -->
+<div id="day-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:flex-end">
+  <div style="background:var(--surface-elev);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:0 0 40px;width:100%;max-height:80dvh;overflow-y:auto;border-top:1px solid var(--hairline-dark)">
+    <div style="position:sticky;top:0;background:var(--surface-elev);padding:18px 20px 14px;border-bottom:1px solid var(--hairline-dark);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:18px;font-weight:500;letter-spacing:-0.3px" id="day-modal-title">Montag</div>
+        <div style="font-size:12px;color:var(--on-dark-mute);margin-top:2px" id="day-modal-date"></div>
+      </div>
+      <button onclick="hideDayModal()" style="background:rgba(255,255,255,.08);border:none;color:var(--on-dark-mute);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div style="padding:16px 20px">
+      <!-- Status-Buttons -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="setDayStatus('training')" id="day-status-training" style="flex:1;padding:10px 6px;border-radius:var(--r-md);border:1px solid var(--hairline-dark);background:transparent;color:var(--on-dark-mute);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s">💪 Training</button>
+        <button onclick="setDayStatus('rest')" id="day-status-rest" style="flex:1;padding:10px 6px;border-radius:var(--r-md);border:1px solid var(--hairline-dark);background:transparent;color:var(--on-dark-mute);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s">🛋️ Ruhetag</button>
+        <button onclick="setDayStatus('none')" id="day-status-none" style="flex:1;padding:10px 6px;border-radius:var(--r-md);border:1px solid var(--hairline-dark);background:transparent;color:var(--on-dark-mute);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s">✕ Kein</button>
+      </div>
+      <!-- Zusammenfassung -->
+      <div id="day-modal-content"></div>
+    </div>
   </div>
 </div>
 
@@ -1223,6 +1248,15 @@ function initDash(){
   renderWeekRow();
   updateKcalDisplay();
   renderWeightSection();
+  // Wochentag-Klick via Event-Delegation
+  var wr=document.getElementById('week-row');
+  if(wr && !wr._hasClickHandler){
+    wr._hasClickHandler=true;
+    wr.addEventListener('click',function(ev){
+      var cell=ev.target.closest('.wday-cell');
+      if(cell&&cell.dataset.ds){showDayModal(cell.dataset.ds,parseInt(cell.dataset.ts));}
+    });
+  }
 }
 
 function renderWeekRow(){
@@ -1234,11 +1268,17 @@ function renderWeekRow(){
     var d=new Date(mon);d.setDate(mon.getDate()+i);
     var ds=d.toLocaleDateString('de-DE');
     var isToday=ds===TODAY;
+    var isFuture=d>now;
+    var status=dayStatus[ds];
     var hadTraining=!!localStorage.getItem('cutTraining-'+ds);
-    var hadFood=!!localStorage.getItem('cutFood-'+ds);
-    var cls=isToday?'today':(hadTraining&&hadFood?'trained':hadFood?'ate':'');
-    var icon=hadTraining?'\ud83d\udcaa':(hadFood?'\ud83e\udd57':(isToday?'\u25c8':'\u00b7'));
-    html+='<div class="wday"><div class="wday-lbl">'+days[i]+'</div><div class="wday-cell '+cls+'">'+icon+'</div></div>';
+    var cls,icon;
+    if(isToday){cls='today';icon='\u25c8';}
+    else if(isFuture){cls='';icon='\u00b7';}
+    else if(status==='rest'){cls='rest';icon='\ud83d\udecc';}
+    else if(hadTraining||status==='training'){cls='trained';icon='\u2713';}
+    else{cls='missed';icon='\u00d7';}
+    html+='<div class="wday"><div class="wday-lbl">'+days[i]+'</div>'
+      +'<div class="wday-cell '+cls+'" data-ds="'+ds+'" data-ts="'+d.getTime()+'" style="cursor:pointer">'+icon+'</div></div>';
   }
   document.getElementById('week-row').innerHTML=html;
 }
@@ -1858,6 +1898,92 @@ function renderTrainingLog(){
   }).join('');
 }
 
+
+function showDayModal(ds,ts){
+  currentDayDs=ds;
+  var d=new Date(ts);
+  var dNames=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  document.getElementById('day-modal-title').textContent=dNames[d.getDay()];
+  document.getElementById('day-modal-date').textContent=ds;
+  updateDayStatusBtns();
+  var html='';
+  // Kalorien
+  var dLogs=ds===TODAY?logs:[];
+  var totK=dLogs.reduce(function(s,e){return s+(e.k||0);},0);
+  var totP=dLogs.reduce(function(s,e){return s+(e.p||0);},0);
+  html+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">\u2665 Ern\u00e4hrung</div>';
+  if(totK>0){
+    var pct=Math.min(100,Math.round(totK/GOAL.kcal*100));
+    var kc=totK>GOAL.kcal?'var(--acc-red)':'var(--acc-green)';
+    html+='<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:22px;font-weight:600;color:'+kc+'">'+totK+' kcal</span><span style="font-size:13px;color:var(--on-dark-mute)">/ '+GOAL.kcal+'</span></div>';
+    html+='<div style="height:4px;background:var(--hairline-dark);border-radius:2px;overflow:hidden;margin-bottom:8px"><div style="width:'+pct+'%;height:100%;background:'+kc+';border-radius:2px"></div></div>';
+    html+='<div style="font-size:12px;font-weight:600;color:var(--acc-green)">Protein: '+totP+'g</div>';
+    dLogs.forEach(function(e){
+      html+='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--hairline-dark);font-size:12px"><span style="color:var(--on-dark-mute)">'+e.n.substring(0,28)+'</span><span style="font-weight:600">'+e.k+' kcal</span></div>';
+    });
+  } else { html+='<div style="font-size:13px;color:var(--on-dark-mute)">Keine Eintr\u00e4ge.</div>'; }
+  html+='</div>';
+  // Training
+  var tLogs=ds===TODAY?trainingLogs.filter(function(e){return e.date===TODAY;}):[];
+  html+='<div><div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">\u25b6 Training</div>';
+  if(tLogs.length){
+    tLogs.forEach(function(e,idx){
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--hairline-dark)">';
+      if(e.type==='cardio'){
+        html+='<div><div style="font-size:13px;font-weight:500">'+e.activity.substring(3)+' \u00b7 '+e.dur+' Min.</div><div style="font-size:11px;color:var(--on-dark-mute)">'+e.intensity+'</div></div>';
+      } else {
+        html+='<div><div style="font-size:13px;font-weight:500">Krafttraining</div><div style="font-size:11px;color:var(--on-dark-mute)">'+e.summary.substring(0,40)+'...</div></div>';
+      }
+      html+='<button onclick="deleteTrainingEntry(\'' +ds+ '\','+idx+')" style="background:none;border:none;color:var(--acc-red);cursor:pointer;font-size:20px;padding:4px 8px">\u00d7</button></div>';
+    });
+  } else { html+='<div style="font-size:13px;color:var(--on-dark-mute)">Kein Training eingetragen.</div>'; }
+  html+='</div>';
+  document.getElementById('day-modal-content').innerHTML=html;
+  document.getElementById('day-modal').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+function hideDayModal(){
+  document.getElementById('day-modal').style.display='none';
+  document.body.style.overflow='';
+}
+
+function updateDayStatusBtns(){
+  var s=dayStatus[currentDayDs]||'';
+  var defs={
+    'training':{el:'day-status-training',bg:'rgba(41,216,132,.2)',bc:'rgba(41,216,132,.5)',tc:'var(--acc-green)'},
+    'rest':{el:'day-status-rest',bg:'rgba(74,158,255,.2)',bc:'rgba(74,158,255,.5)',tc:'var(--blue)'},
+    'none':{el:'day-status-none',bg:'rgba(226,59,74,.15)',bc:'rgba(226,59,74,.4)',tc:'var(--acc-red)'}
+  };
+  Object.keys(defs).forEach(function(k){
+    var btn=document.getElementById(defs[k].el);if(!btn)return;
+    var active=s===k;
+    btn.style.background=active?defs[k].bg:'transparent';
+    btn.style.borderColor=active?defs[k].bc:'var(--hairline-dark)';
+    btn.style.color=active?defs[k].tc:'var(--on-dark-mute)';
+  });
+}
+
+function setDayStatus(status){
+  if(dayStatus[currentDayDs]===status){delete dayStatus[currentDayDs];}
+  else{dayStatus[currentDayDs]=status;}
+  localStorage.setItem('cutDayStatus',JSON.stringify(dayStatus));
+  updateDayStatusBtns();
+  renderWeekRow();
+}
+
+function deleteTrainingEntry(ds,idx){
+  if(ds===TODAY){
+    var list=trainingLogs.filter(function(e){return e.date===TODAY;});
+    list.splice(idx,1);
+    trainingLogs=trainingLogs.filter(function(e){return e.date!==TODAY;}).concat(list);
+    saveTrainingLogs();
+    renderTrainingLog();
+  }
+  showDayModal(currentDayDs,new Date(currentDayDs.split('.').reverse().join('-')).getTime());
+  renderWeekRow();
+}
+
 // ═══ TOAST ═══
 function showToast(msg){
   var t=document.getElementById('toast');
@@ -1867,6 +1993,8 @@ function showToast(msg){
 
 // ═══ SPLASH ═══
 var PROFIL = JSON.parse(localStorage.getItem('cutProfil')||'{}');
+var dayStatus = JSON.parse(localStorage.getItem('cutDayStatus')||'{}');
+var currentDayDs = '';
 
 function startSplash(){
   // Canvas Partikel
