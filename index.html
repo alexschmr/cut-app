@@ -1571,7 +1571,7 @@ function apiCall(prompt, maxTokens, imageData, callback) {
       'anthropic-version': '2023-06-01',
       'anthropic-dangerous-allow-browser': 'true'
     },
-    body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:maxTokens,messages:messages})
+    body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:maxTokens,messages:messages})
   }).then(function(r){return r.json();}).then(function(data){
     if(data.error){callback(new Error(data.error.message),null);return;}
     var raw=data.content&&data.content.find(function(b){return b.type==='text';})?data.content.find(function(b){return b.type==='text';}).text:'';
@@ -1705,7 +1705,7 @@ function analyzeWo(){
   fetch(PROXY_URL || 'https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
-    body:JSON.stringify({model:'claude-3-5-sonnet-20241022',max_tokens:800,messages:messages})
+    body:JSON.stringify({model:'claude-haiku-4-5',max_tokens:800,messages:messages})
   }).then(function(r){return r.json();}).then(function(data){
     if(data.error){showToast('API Fehler: '+data.error.message.substring(0,35));console.error(data.error);}
     else{
