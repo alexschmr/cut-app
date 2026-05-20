@@ -477,12 +477,12 @@ textarea.inp { height: auto; resize: none; line-height: 1.5; }
 
       <!-- FOTO MODUS -->
       <div id="md-foto" style="display:none">
-        <input type="file" id="food-foto-inp" accept="image/*" capture="environment" style="display:none" onchange="onFoodFoto(this)">
+        <input type="file" id="food-foto-inp" accept="image/*,image/heic,image/heif" style="display:none" onchange="onFoodFoto(this)">
         <div onclick="document.getElementById('food-foto-inp').click()" id="food-foto-zone" style="border:1.5px dashed rgba(255,255,255,.18);border-radius:var(--r-md);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:8px;position:relative;overflow:hidden">
           <img id="food-foto-prev" style="display:none;width:100%;max-height:200px;object-fit:cover;border-radius:var(--r-sm)">
           <div id="food-foto-ph" style="display:flex;flex-direction:column;align-items:center;gap:5px">
             <div style="font-size:32px">📷</div>
-            <div style="font-size:13px;font-weight:600;color:var(--on-dark)">Foto aufnehmen oder hochladen</div>
+            <div style="font-size:13px;font-weight:600;color:var(--on-dark)">Foto aufnehmen oder aus Mediathek wählen</div>
             <div style="font-size:11px;color:var(--on-dark-mute)">Claude analysiert Zutaten & Kalorien</div>
           </div>
           <div id="food-foto-change" style="display:none;position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.65);color:var(--on-dark);font-size:9px;font-weight:700;padding:4px 9px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase">Ändern</div>
@@ -1460,14 +1460,31 @@ function onFoodFoto(inp){
   var f=inp.files[0];if(!f)return;
   var r=new FileReader();
   r.onload=function(e){
-    foodFotoBase64=e.target.result.split(',')[1];
-    var prev=document.getElementById('food-foto-prev');if(prev){prev.src=e.target.result;prev.style.display='block';}
-    var ph=document.getElementById('food-foto-ph');if(ph)ph.style.display='none';
-    var fc=document.getElementById('food-foto-change');if(fc)fc.style.display='block';
-    var btn=document.getElementById('foto-calc-btn');if(btn)btn.disabled=false;
-    var txt=document.getElementById('foto-calc-txt');if(txt)txt.textContent='\u2736 Kalorien aus Foto berechnen';
-    resetMacroUI();setNote('','');
-    var frb=document.getElementById('foto-result-box');if(frb)frb.style.display='none';
+    // Bild via Canvas auf max 1200px verkleinern + immer als JPEG ausgeben
+    var img=new Image();
+    img.onload=function(){
+      var maxW=1200,maxH=1200,w=img.width,h=img.height;
+      if(w>maxW||h>maxH){var ratio=Math.min(maxW/w,maxH/h);w=Math.round(w*ratio);h=Math.round(h*ratio);}
+      var canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+      var ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+      var dataUrl=canvas.toDataURL('image/jpeg',0.85);
+      foodFotoBase64=dataUrl.split(',')[1];
+      var prev=document.getElementById('food-foto-prev');if(prev){prev.src=dataUrl;prev.style.display='block';}
+      var ph=document.getElementById('food-foto-ph');if(ph)ph.style.display='none';
+      var fc=document.getElementById('food-foto-change');if(fc)fc.style.display='block';
+      var btn=document.getElementById('foto-calc-btn');if(btn)btn.disabled=false;
+      var txt=document.getElementById('foto-calc-txt');if(txt)txt.textContent='\u2736 Kalorien aus Foto berechnen';
+      resetMacroUI();setNote('','');
+      var frb=document.getElementById('foto-result-box');if(frb)frb.style.display='none';
+    };
+    img.onerror=function(){
+      // Fallback ohne Canvas (z.B. HEIC das der Browser nicht rendern kann)
+      foodFotoBase64=e.target.result.split(',')[1];
+      var btn=document.getElementById('foto-calc-btn');if(btn)btn.disabled=false;
+      var txt=document.getElementById('foto-calc-txt');if(txt)txt.textContent='\u2736 Kalorien aus Foto berechnen';
+      setNote('Foto geladen (kein Vorschau-Support)','ok');
+    };
+    img.src=e.target.result;
   };
   r.readAsDataURL(f);
 }
@@ -1718,7 +1735,7 @@ function analyzeWo(){
 }
 
 function saveWoFromAnalysis(){
-  trainingLogs.unshift({type:'kraft',summary:lastWoAnalysis.substring(0,200),date:TODAY,ts:Date.now()});
+  trainingLogs.unshift({type:'kraft',summary:lastWoAnalysis.substring(0,120),fullAnalysis:lastWoAnalysis,date:TODAY,ts:Date.now()});
   saveTrainingLogs();renderTrainingLog();
   document.getElementById('wo-result').style.display='none';
   document.getElementById('wo-preview').style.display='none';
@@ -1750,23 +1767,93 @@ function saveTrainingLogs(){
   if(todayLogs.length)localStorage.setItem('cutTraining-'+TODAY,'1');
 }
 
+
+function mdToHtml(text){
+  if(!text) return '';
+  var lines = text.split('\n');
+  var html = '';
+  var inTable = false;
+  var tableRows = [];
+  
+  for(var i=0; i<lines.length; i++){
+    var line = lines[i].trim();
+    
+    // Tabellen-Zeile erkennen
+    if(line.startsWith('|') && line.endsWith('|')){
+      // Trennzeile überspringen
+      if(line.replace(/[|\-\s]/g,'').length === 0){ continue; }
+      var cells = line.split('|').filter(function(c){ return c.trim() !== ''; });
+      if(!inTable){
+        // Erste Zeile = Header
+        html += '<div style="overflow-x:auto;margin:8px 0"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+        html += '<tr style="border-bottom:1px solid rgba(255,255,255,.15)">';
+        cells.forEach(function(c){
+          html += '<th style="padding:6px 8px;text-align:left;font-weight:700;color:var(--on-dark-mute);white-space:nowrap;font-size:10px;text-transform:uppercase;letter-spacing:.5px">'+c.trim()+'</th>';
+        });
+        html += '</tr>';
+        inTable = true;
+      } else {
+        html += '<tr style="border-bottom:1px solid rgba(255,255,255,.06)">';
+        cells.forEach(function(c,ci){
+          html += '<td style="padding:6px 8px;color:var(--on-dark);white-space:nowrap">'+c.trim()+'</td>';
+        });
+        html += '</tr>';
+      }
+      continue;
+    }
+    
+    // Tabelle schließen
+    if(inTable){
+      html += '</table></div>';
+      inTable = false;
+    }
+    
+    if(!line){ html += '<div style="height:6px"></div>'; continue; }
+    
+    // Überschriften
+    if(line.startsWith('### ')){ html += '<div style="font-size:12px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px;margin:10px 0 4px">'+line.substring(4)+'</div>'; continue; }
+    if(line.startsWith('## ')){ html += '<div style="font-size:13px;font-weight:700;color:var(--on-dark);margin:12px 0 6px">'+line.substring(3)+'</div>'; continue; }
+    if(line.startsWith('# ')){ html += '<div style="font-size:14px;font-weight:700;color:var(--on-dark);margin:8px 0 6px">'+line.substring(2)+'</div>'; continue; }
+    
+    // Bold
+    line = line.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+    
+    // Bullet
+    if(line.startsWith('- ') || line.startsWith('* ')){
+      html += '<div style="display:flex;gap:6px;padding:2px 0"><span style="color:var(--on-dark-mute);flex-shrink:0">·</span><span>'+line.substring(2)+'</span></div>';
+      continue;
+    }
+    
+    html += '<div style="padding:1px 0;line-height:1.5">'+line+'</div>';
+  }
+  
+  if(inTable) html += '</table></div>';
+  return html;
+}
+
 function renderTrainingLog(){
   var el=document.getElementById('training-log');
   var todayLogs=trainingLogs.filter(function(e){return e.date===TODAY;});
-  if(!todayLogs.length){el.innerHTML='<div style="font-size:14px;color:var(--on-dark-mute)">Noch kein Training heute.</div>';return;}
-  el.innerHTML=todayLogs.map(function(e){
+  if(!todayLogs.length){
+    el.innerHTML='<div style="font-size:14px;color:var(--on-dark-mute)">Noch kein Training heute.</div>';
+    return;
+  }
+  el.innerHTML=todayLogs.map(function(e,idx){
     if(e.type==='cardio'){
       return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hairline-dark)">'
         +'<div style="font-size:24px">'+e.activity.substring(0,2)+'</div>'
         +'<div style="flex:1"><div style="font-size:14px;font-weight:500">'+e.activity.substring(3)+' \u00b7 '+e.dur+' Min.</div>'
         +'<div style="font-size:12px;font-weight:600;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px">'+e.intensity+(e.note?' \u00b7 '+e.note:'')+'</div></div>'
-        +'<span class="badge badge-green">Cardio</span></div>';
+        +'<span class="badge" style="background:rgba(77,232,180,.1);color:var(--acc-green)">Cardio</span></div>';
     } else {
+      var uid='wo-detail-'+idx;
       return '<div style="padding:12px 0;border-bottom:1px solid var(--hairline-dark)">'
-        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+        +'<div onclick="var d=document.getElementById(\''+uid+'\');d.style.display=d.style.display===\'none\'?\'block\':\'none\'" style="display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer">'
         +'<div style="font-size:14px;font-weight:500;flex:1">Krafttraining</div>'
-        +'<span class="badge" style="background:rgba(255,255,255,.08);color:var(--on-dark-mute)">Kraft</span></div>'
-        +'<div style="font-size:12px;color:var(--on-dark-mute);line-height:1.6;white-space:pre-wrap">'+e.summary+'</div></div>';
+        +'<span class="badge" style="background:rgba(255,255,255,.08);color:var(--on-dark-mute)">Kraft</span>'
+        +'<span style="color:var(--on-dark-mute);font-size:14px">\u203a</span></div>'
+        +'<div id="'+uid+'" style="display:none;margin-top:10px;font-size:13px;color:var(--on-dark);line-height:1.6">'+mdToHtml(e.fullAnalysis||e.summary)+'</div>'
+        +'</div>';
     }
   }).join('');
 }
