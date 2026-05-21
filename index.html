@@ -1575,6 +1575,79 @@ function setNote(msg,type){
 }
 
 
+
+// ═══ PERSISTENTER SPEICHER (IndexedDB für iOS-Stabilität) ═══
+var DB_NAME = 'cut-app-db';
+var DB_VERSION = 1;
+var db = null;
+
+function openDB(callback){
+  if(db){ callback(db); return; }
+  var req = indexedDB.open(DB_NAME, DB_VERSION);
+  req.onupgradeneeded = function(e){
+    var d = e.target.result;
+    if(!d.objectStoreNames.contains('settings')){
+      d.createObjectStore('settings', {keyPath:'k'});
+    }
+  };
+  req.onsuccess = function(e){ db = e.target.result; callback(db); };
+  req.onerror = function(){ callback(null); };
+}
+
+function idbSet(key, value){
+  openDB(function(d){
+    if(!d) return;
+    var tx = d.transaction('settings','readwrite');
+    tx.objectStore('settings').put({k:key, v:value});
+  });
+  // Auch in localStorage als Fallback
+  try{ localStorage.setItem(key, value); } catch(e){}
+}
+
+function idbGet(key, callback){
+  // Erst localStorage (schnell)
+  var ls = null;
+  try{ ls = localStorage.getItem(key); } catch(e){}
+  if(ls){ callback(ls); }
+  // Dann IndexedDB (persistenter)
+  openDB(function(d){
+    if(!d){ callback(ls); return; }
+    var tx = d.transaction('settings','readonly');
+    var req = tx.objectStore('settings').get(key);
+    req.onsuccess = function(){
+      var val = req.result ? req.result.v : null;
+      if(val && val !== ls){
+        // IndexedDB hat neueren Wert → in localStorage synchronisieren
+        try{ localStorage.setItem(key, val); } catch(e){}
+        callback(val);
+      } else {
+        callback(ls || val);
+      }
+    };
+    req.onerror = function(){ callback(ls); };
+  });
+}
+
+function loadAllKeys(callback){
+  idbGet('cutApiKey', function(apiKey){
+    idbGet('cutProxyUrl', function(proxyUrl){
+      idbGet('cutSupabaseKey', function(sbKey){
+        idbGet('cutUserId', function(userId){
+          if(apiKey) API_KEY = apiKey;
+          if(proxyUrl) PROXY_URL = proxyUrl;
+          if(sbKey) SUPABASE_KEY = sbKey;
+          if(userId) USER_ID = userId;
+          else {
+            USER_ID = 'user_'+Date.now()+'_'+Math.random().toString(36).substring(2,9);
+            idbSet('cutUserId', USER_ID);
+          }
+          if(callback) callback();
+        });
+      });
+    });
+  });
+}
+
 // ═══ SUPABASE ═══
 var SUPABASE_URL = 'https://dfzwsjsheczmbbzalwvh.supabase.co';
 var SUPABASE_KEY = localStorage.getItem('cutSupabaseKey') || '';
@@ -1690,12 +1763,12 @@ function saveApiKey(){
   }
   API_KEY = key;
   PROXY_URL = proxy;
-  localStorage.setItem('cutApiKey', key);
-  localStorage.setItem('cutProxyUrl', proxy);
+  idbSet('cutApiKey', key);
+  idbSet('cutProxyUrl', proxy);
   var sbInp = document.getElementById('supabase-key-inp');
   if(sbInp && sbInp.value.trim()){
     SUPABASE_KEY = sbInp.value.trim();
-    localStorage.setItem('cutSupabaseKey', SUPABASE_KEY);
+    idbSet('cutSupabaseKey', SUPABASE_KEY);
     setTimeout(function(){ loadFromSupabase(); }, 800);
   }
   hideApiSetup();
@@ -2320,15 +2393,16 @@ function confirmReset(){
 
 // ═══ INIT ═══
 startSplash();
-initDash();
-// Supabase-Daten laden (nach kurzer Verzögerung damit UI bereit ist)
-setTimeout(function(){ loadFromSupabase(); }, 1000);
-// API-Key Setup beim allerersten Start (nach Splash)
-if(!API_KEY){
-  setTimeout(function(){
-    showApiSetup();
-  }, 3400);
-}
+// Keys aus IndexedDB laden (stabiler als localStorage auf iOS)
+loadAllKeys(function(){
+  initDash();
+  if(SUPABASE_KEY){
+    setTimeout(function(){ loadFromSupabase(); }, 1200);
+  }
+  if(!API_KEY || !PROXY_URL){
+    setTimeout(function(){ showApiSetup(); }, 3400);
+  }
+});
 </script>
 <script>
 if('serviceWorker' in navigator){

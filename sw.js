@@ -1,21 +1,18 @@
-const CACHE = 'cut-app-v1';
-const FILES = [
-  './index.html',
-  './manifest.json'
-];
+// Service Worker – immer aktuellste Version laden
+const CACHE = 'cut-app-v9';
 
-// Install: App cachen
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE).then(function(cache) {
-      return cache.addAll(FILES);
+      return cache.addAll(['./index.html', './manifest.json']);
     })
   );
+  // Sofort aktivieren ohne auf alte Clients zu warten
   self.skipWaiting();
 });
 
-// Activate: alten Cache löschen
 self.addEventListener('activate', function(e) {
+  // Alle alten Caches löschen
   e.waitUntil(
     caches.keys().then(function(keys) {
       return Promise.all(
@@ -27,34 +24,39 @@ self.addEventListener('activate', function(e) {
   self.clients.claim();
 });
 
-// Fetch: Cache first, dann Netzwerk
-// API-Calls (anthropic.com) immer direkt ums Netzwerk
 self.addEventListener('fetch', function(e) {
+  // API-Calls immer direkt ums Netzwerk – nie cachen
   if(e.request.url.includes('anthropic.com') ||
+     e.request.url.includes('supabase.co') ||
+     e.request.url.includes('workers.dev') ||
      e.request.url.includes('fonts.googleapis.com') ||
      e.request.url.includes('fonts.gstatic.com')) {
-    // Netzwerk-first für externe Ressourcen
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Für index.html: immer Netzwerk zuerst, Cache als Fallback
+  if(e.request.url.includes('index.html') || e.request.mode === 'navigate') {
     e.respondWith(
-      fetch(e.request).catch(function() {
-        return new Response('', { status: 503 });
-      })
+      fetch(e.request)
+        .then(function(response) {
+          // Frische Version im Cache speichern
+          var clone = response.clone();
+          caches.open(CACHE).then(function(cache) { cache.put(e.request, clone); });
+          return response;
+        })
+        .catch(function() {
+          // Offline: Cache-Version nutzen
+          return caches.match(e.request);
+        })
     );
     return;
   }
 
+  // Alles andere: Cache first
   e.respondWith(
     caches.match(e.request).then(function(cached) {
-      if(cached) return cached;
-      return fetch(e.request).then(function(response) {
-        // Lokale Dateien cachen
-        if(response.ok && e.request.url.startsWith(self.location.origin)) {
-          var clone = response.clone();
-          caches.open(CACHE).then(function(cache) {
-            cache.put(e.request, clone);
-          });
-        }
-        return response;
-      });
+      return cached || fetch(e.request);
     })
   );
 });
