@@ -1344,7 +1344,7 @@ function saveWeight(){
   if(!v||v<30||v>300){showToast('Ung\u00fcltiger Wert');return;}
   var entry={w:v,date:TODAY,ts:Date.now()};
   weightLog.unshift(entry);
-  localStorage.setItem('cutWeight',JSON.stringify(weightLog));
+  var _wj=JSON.stringify(weightLog);localStorage.setItem('cutWeight',_wj);idbSet('cutWeight',_wj);
   sbSave('weights',{user_id:USER_ID,weight:v,date:TODAY,ts:entry.ts});
   document.getElementById('wt-inp').value='';
   hideWeightModal();
@@ -1353,7 +1353,7 @@ function saveWeight(){
 }
 function deleteWeight(ts){
   weightLog=weightLog.filter(function(e){return e.ts!==ts;});
-  localStorage.setItem('cutWeight',JSON.stringify(weightLog));
+  var _wj=JSON.stringify(weightLog);localStorage.setItem('cutWeight',_wj);idbSet('cutWeight',_wj);
   renderWeightSection();
 }
 
@@ -1464,13 +1464,20 @@ function renderLogList(){
 }
 
 function saveLogs(){
-  localStorage.setItem('cutLogs',JSON.stringify(logs));
+  var logsJson = JSON.stringify(logs);
+  localStorage.setItem('cutLogs', logsJson);
+  idbSet('cutLogs', logsJson);
+  idbSet('cutLogDate', TODAY);
   var totK=logs.reduce(function(s,e){return s+(e.k||0);},0);
   if(totK>0)localStorage.setItem('cutFood-'+TODAY,'1');
-  // Letzten Eintrag in Supabase speichern
-  if(logs.length){
-    var e=logs[0];
-    sbSave('food_logs',{user_id:USER_ID,name:e.n,kcal:e.k,protein:e.p,carbs:e.c,fat:e.f,meal_type:e.t,log_date:TODAY,ts:e.id});
+  // Supabase: zuerst alle heutigen Einträge löschen, dann alle neu einfügen
+  if(SUPABASE_KEY){
+    sbDelete('food_logs','user_id=eq.'+USER_ID+'&log_date=eq.'+TODAY).then(function(){
+      logs.forEach(function(e){
+        sbSave('food_logs',{user_id:USER_ID,name:e.n,kcal:e.k,protein:e.p,
+          carbs:e.c,fat:e.f,meal_type:e.t,log_date:TODAY,ts:e.id});
+      });
+    }).catch(function(){});
   }
 }
 function delLog(id){logs=logs.filter(function(e){return e.id!==id;});saveLogs();renderLogList();updateKcalDisplay();}
@@ -1575,79 +1582,6 @@ function setNote(msg,type){
 }
 
 
-
-// ═══ PERSISTENTER SPEICHER (IndexedDB für iOS-Stabilität) ═══
-var DB_NAME = 'cut-app-db';
-var DB_VERSION = 1;
-var db = null;
-
-function openDB(callback){
-  if(db){ callback(db); return; }
-  var req = indexedDB.open(DB_NAME, DB_VERSION);
-  req.onupgradeneeded = function(e){
-    var d = e.target.result;
-    if(!d.objectStoreNames.contains('settings')){
-      d.createObjectStore('settings', {keyPath:'k'});
-    }
-  };
-  req.onsuccess = function(e){ db = e.target.result; callback(db); };
-  req.onerror = function(){ callback(null); };
-}
-
-function idbSet(key, value){
-  openDB(function(d){
-    if(!d) return;
-    var tx = d.transaction('settings','readwrite');
-    tx.objectStore('settings').put({k:key, v:value});
-  });
-  // Auch in localStorage als Fallback
-  try{ localStorage.setItem(key, value); } catch(e){}
-}
-
-function idbGet(key, callback){
-  // Erst localStorage (schnell)
-  var ls = null;
-  try{ ls = localStorage.getItem(key); } catch(e){}
-  if(ls){ callback(ls); }
-  // Dann IndexedDB (persistenter)
-  openDB(function(d){
-    if(!d){ callback(ls); return; }
-    var tx = d.transaction('settings','readonly');
-    var req = tx.objectStore('settings').get(key);
-    req.onsuccess = function(){
-      var val = req.result ? req.result.v : null;
-      if(val && val !== ls){
-        // IndexedDB hat neueren Wert → in localStorage synchronisieren
-        try{ localStorage.setItem(key, val); } catch(e){}
-        callback(val);
-      } else {
-        callback(ls || val);
-      }
-    };
-    req.onerror = function(){ callback(ls); };
-  });
-}
-
-function loadAllKeys(callback){
-  idbGet('cutApiKey', function(apiKey){
-    idbGet('cutProxyUrl', function(proxyUrl){
-      idbGet('cutSupabaseKey', function(sbKey){
-        idbGet('cutUserId', function(userId){
-          if(apiKey) API_KEY = apiKey;
-          if(proxyUrl) PROXY_URL = proxyUrl;
-          if(sbKey) SUPABASE_KEY = sbKey;
-          if(userId) USER_ID = userId;
-          else {
-            USER_ID = 'user_'+Date.now()+'_'+Math.random().toString(36).substring(2,9);
-            idbSet('cutUserId', USER_ID);
-          }
-          if(callback) callback();
-        });
-      });
-    });
-  });
-}
-
 // ═══ SUPABASE ═══
 var SUPABASE_URL = 'https://dfzwsjsheczmbbzalwvh.supabase.co';
 var SUPABASE_KEY = localStorage.getItem('cutSupabaseKey') || '';
@@ -1702,12 +1636,21 @@ function loadFromSupabase(){
     renderWeightSection();
   });
 
-  // Heutige Essenseinträge laden
+  // Heutige Essenseinträge laden - Supabase ist Source of Truth
   sbLoad('food_logs', '&log_date=eq.'+today).then(function(rows){
-    if(!rows||!rows.length) return;
-    logs = rows.map(function(r){ return {n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, t:r.meal_type, id:r.ts}; });
-    localStorage.setItem('cutLogs', JSON.stringify(logs));
-    localStorage.setItem('cutLogDate', today);
+    if(!rows) return;
+    var sbLogs = rows.map(function(r){ return {n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, t:r.meal_type, id:r.ts}; });
+    // Deduplizieren: nur eindeutige ts-Werte
+    var seen = {};
+    sbLogs = sbLogs.filter(function(e){ if(seen[e.id]) return false; seen[e.id]=true; return true; });
+    // Supabase-Daten verwenden wenn vorhanden, sonst lokale behalten
+    if(sbLogs.length > 0 || logs.length === 0){
+      logs = sbLogs;
+      var logsJson = JSON.stringify(logs);
+      localStorage.setItem('cutLogs', logsJson);
+      idbSet('cutLogs', logsJson);
+      localStorage.setItem('cutLogDate', today);
+    }
     updateKcalDisplay();
     if(document.getElementById('log-list')) renderLogList();
   });
@@ -1738,7 +1681,7 @@ function loadFromSupabase(){
     .then(function(rows){
       if(!rows||!rows.length) return;
       PROFIL = rows[0].data || {};
-      localStorage.setItem('cutProfil', JSON.stringify(PROFIL));
+      var _pj=JSON.stringify(PROFIL);localStorage.setItem('cutProfil',_pj);idbSet('cutProfil',_pj);
       if(PROFIL.kcal) GOAL.kcal = parseInt(PROFIL.kcal)||2650;
       if(PROFIL.protein) GOAL.p = parseInt(PROFIL.protein)||200;
     }).catch(function(){});
@@ -1763,12 +1706,11 @@ function saveApiKey(){
   }
   API_KEY = key;
   PROXY_URL = proxy;
-  idbSet('cutApiKey', key);
-  idbSet('cutProxyUrl', proxy);
+  idbSet('cutApiKey',key);idbSet('cutProxyUrl',proxy);
   var sbInp = document.getElementById('supabase-key-inp');
   if(sbInp && sbInp.value.trim()){
     SUPABASE_KEY = sbInp.value.trim();
-    idbSet('cutSupabaseKey', SUPABASE_KEY);
+    idbSet('cutSupabaseKey',SUPABASE_KEY);
     setTimeout(function(){ loadFromSupabase(); }, 800);
   }
   hideApiSetup();
@@ -2165,7 +2107,7 @@ function setDayStatus(status){
     sbDelete('day_status','user_id=eq.'+USER_ID+'&date=eq.'+currentDayDs)
       .then(function(){ sbSave('day_status',{user_id:USER_ID,date:currentDayDs,status:status}); });
   }
-  localStorage.setItem('cutDayStatus',JSON.stringify(dayStatus));
+  var _dj=JSON.stringify(dayStatus);localStorage.setItem('cutDayStatus',_dj);idbSet('cutDayStatus',_dj);
   updateDayStatusBtns();
   renderWeekRow();
 }
@@ -2336,7 +2278,7 @@ function saveProfile(){
     var el = document.getElementById(id);
     if(el) PROFIL[id.replace('profil-','')] = el.value;
   });
-  localStorage.setItem('cutProfil', JSON.stringify(PROFIL));
+  var _pj=JSON.stringify(PROFIL);localStorage.setItem('cutProfil',_pj);idbSet('cutProfil',_pj);
   sbFetch('profiles','POST',{user_id:USER_ID,data:PROFIL},'').catch(function(){
     sbFetch('profiles','PATCH',{data:PROFIL},'?user_id=eq.'+USER_ID).catch(function(){});
   });
@@ -2355,7 +2297,7 @@ function loadAvatar(inp){
   var r = new FileReader();
   r.onload = function(e){
     PROFIL.avatar = e.target.result;
-    localStorage.setItem('cutProfil', JSON.stringify(PROFIL));
+    var _pj=JSON.stringify(PROFIL);localStorage.setItem('cutProfil',_pj);idbSet('cutProfil',_pj);
     var img = document.getElementById('profil-avatar-img');
     var ph  = document.getElementById('profil-avatar-ph');
     if(img){ img.src=e.target.result; img.style.display='block'; }
@@ -2393,16 +2335,88 @@ function confirmReset(){
 
 // ═══ INIT ═══
 startSplash();
-// Keys aus IndexedDB laden (stabiler als localStorage auf iOS)
 loadAllKeys(function(){
   initDash();
-  if(SUPABASE_KEY){
-    setTimeout(function(){ loadFromSupabase(); }, 1200);
-  }
-  if(!API_KEY || !PROXY_URL){
-    setTimeout(function(){ showApiSetup(); }, 3400);
-  }
+  if(SUPABASE_KEY) setTimeout(function(){loadFromSupabase();},1200);
+  if(!API_KEY||!PROXY_URL) setTimeout(function(){showApiSetup();},3400);
 });
+
+
+
+// ═══ INDEXEDDB - Stabiler Speicher für iOS ═══
+var _idb = null;
+function _openIDB(cb){
+  if(_idb){cb(_idb);return;}
+  var r=indexedDB.open('cut-app',1);
+  r.onupgradeneeded=function(e){
+    if(!e.target.result.objectStoreNames.contains('kv'))
+      e.target.result.createObjectStore('kv',{keyPath:'k'});
+  };
+  r.onsuccess=function(e){_idb=e.target.result;cb(_idb);};
+  r.onerror=function(){cb(null);};
+}
+function idbSet(k,v){
+  try{localStorage.setItem(k,v);}catch(e){}
+  _openIDB(function(d){
+    if(!d)return;
+    try{d.transaction('kv','readwrite').objectStore('kv').put({k:k,v:v});}catch(e){}
+  });
+}
+function idbGet(k,cb){
+  var ls=null;
+  try{ls=localStorage.getItem(k);}catch(e){}
+  _openIDB(function(d){
+    if(!d){cb(ls);return;}
+    try{
+      var r=d.transaction('kv','readonly').objectStore('kv').get(k);
+      r.onsuccess=function(){
+        var v=r.result?r.result.v:null;
+        if(v&&v!==ls){try{localStorage.setItem(k,v);}catch(e){}}
+        cb(v||ls);
+      };
+      r.onerror=function(){cb(ls);};
+    }catch(e){cb(ls);}
+  });
+}
+function loadAllKeys(cb){
+  idbGet('cutApiKey',function(ak){
+    idbGet('cutProxyUrl',function(pu){
+      idbGet('cutSupabaseKey',function(sk){
+        idbGet('cutUserId',function(uid){
+          idbGet('cutProfil',function(pj){
+            idbGet('cutDayStatus',function(dj){
+              idbGet('cutWeight',function(wj){
+                idbGet('cutLogs',function(lj){
+                  idbGet('cutLogDate',function(ld){
+                    if(ak) API_KEY=ak;
+                    if(pu) PROXY_URL=pu;
+                    if(sk) SUPABASE_KEY=sk;
+                    if(uid){USER_ID=uid;}
+                    else{USER_ID='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);idbSet('cutUserId',USER_ID);}
+                    if(pj){try{
+                      PROFIL=JSON.parse(pj);
+                      if(PROFIL.kcal)GOAL.kcal=parseInt(PROFIL.kcal)||2650;
+                      if(PROFIL.protein)GOAL.p=parseInt(PROFIL.protein)||200;
+                      if(PROFIL.weight)START_WEIGHT=parseFloat(PROFIL.weight)||104;
+                      if(PROFIL.target)TARGET_WEIGHT=parseFloat(PROFIL.target)||90;
+                    }catch(e){}}
+                    if(dj){try{dayStatus=JSON.parse(dj);}catch(e){}}
+                    if(wj){try{weightLog=JSON.parse(wj);}catch(e){}}
+                    // Logs nur laden wenn vom heutigen Tag
+                    var today=new Date().toLocaleDateString('de-DE');
+                    if(lj&&ld===today){try{logs=JSON.parse(lj);}catch(e){}}
+                    if(cb)cb();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
 </script>
 <script>
 if('serviceWorker' in navigator){
