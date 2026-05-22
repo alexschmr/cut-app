@@ -1626,65 +1626,100 @@ function sbLoad(table, filter){
 // Beim Start: Daten aus Supabase laden
 function loadFromSupabase(){
   if(!SUPABASE_KEY) return;
-  var today = new Date().toLocaleDateString('de-DE');
+  var today=new Date().toLocaleDateString('de-DE');
 
-  // Gewicht laden
-  sbLoad('weights').then(function(rows){
-    if(!rows||!rows.length) return;
-    weightLog = rows.map(function(r){ return {w:r.weight, date:r.date, ts:r.ts}; });
-    localStorage.setItem('cutWeight', JSON.stringify(weightLog));
-    renderWeightSection();
-  });
-
-  // Heutige Essenseinträge laden - Supabase ist Source of Truth
-  sbLoad('food_logs', '&log_date=eq.'+today).then(function(rows){
-    if(!rows) return;
-    var sbLogs = rows.map(function(r){ return {n:r.name, k:r.kcal, p:r.protein, c:r.carbs, f:r.fat, t:r.meal_type, id:r.ts}; });
-    // Deduplizieren: nur eindeutige ts-Werte
-    var seen = {};
-    sbLogs = sbLogs.filter(function(e){ if(seen[e.id]) return false; seen[e.id]=true; return true; });
-    // Supabase-Daten verwenden wenn vorhanden, sonst lokale behalten
-    if(sbLogs.length > 0 || logs.length === 0){
-      logs = sbLogs;
-      var logsJson = JSON.stringify(logs);
-      localStorage.setItem('cutLogs', logsJson);
-      idbSet('cutLogs', logsJson);
-      localStorage.setItem('cutLogDate', today);
-    }
-    updateKcalDisplay();
-    if(document.getElementById('log-list')) renderLogList();
-  });
-
-  // Heutige Trainingseinträge laden
-  sbLoad('training_logs', '&log_date=eq.'+today).then(function(rows){
-    if(!rows||!rows.length) return;
-    trainingLogs = rows.map(function(r){
-      return {type:r.type, summary:r.summary, fullAnalysis:r.full_analysis,
-              activity:r.activity, dur:r.duration, intensity:r.intensity,
-              note:r.note, date:r.log_date, ts:r.ts};
-    });
-    localStorage.setItem('cutTraining', JSON.stringify(trainingLogs));
-    if(document.getElementById('training-log')) renderTrainingLog();
-  });
-
-  // Tag-Status laden
-  sbLoad('day_status', '').then(function(rows){
-    if(!rows||!rows.length) return;
-    rows.forEach(function(r){ dayStatus[r.date] = r.status; });
-    localStorage.setItem('cutDayStatus', JSON.stringify(dayStatus));
-    renderWeekRow();
-  });
-
-  // Profil laden
-  sbFetch('profiles', 'GET', null, '?user_id=eq.'+USER_ID)
-    .then(function(r){ return r.json(); })
+  // PROFIL
+  sbFetch('profiles','GET',null,'?user_id=eq.'+USER_ID)
+    .then(function(r){return r.json();})
     .then(function(rows){
       if(!rows||!rows.length) return;
-      PROFIL = rows[0].data || {};
-      var _pj=JSON.stringify(PROFIL);localStorage.setItem('cutProfil',_pj);idbSet('cutProfil',_pj);
-      if(PROFIL.kcal) GOAL.kcal = parseInt(PROFIL.kcal)||2650;
-      if(PROFIL.protein) GOAL.p = parseInt(PROFIL.protein)||200;
+      var p=rows[0].data||{};
+      if(!p.name&&!p.kcal) return;
+      PROFIL=p;
+      var pj=JSON.stringify(PROFIL);
+      localStorage.setItem('cutProfil',pj);idbSet('cutProfil',pj);
+      if(PROFIL.kcal)GOAL.kcal=parseInt(PROFIL.kcal)||2650;
+      if(PROFIL.protein)GOAL.p=parseInt(PROFIL.protein)||200;
+      if(PROFIL.weight)START_WEIGHT=parseFloat(PROFIL.weight)||104;
+      if(PROFIL.target)TARGET_WEIGHT=parseFloat(PROFIL.target)||90;
+      var pn=document.getElementById('profil-name-disp');
+      if(pn)pn.textContent=PROFIL.name||'Dein Name';
+      ['name','weight','target','height','age','kcal','protein'].forEach(function(f){
+        var el=document.getElementById('profil-'+f);
+        if(el&&PROFIL[f])el.value=PROFIL[f];
+      });
     }).catch(function(){});
+
+  // GEWICHT
+  sbLoad('weights','').then(function(rows){
+    if(!rows||!rows.length) return;
+    weightLog=rows.map(function(r){return{w:r.weight,date:r.date,ts:r.ts};});
+    var wj=JSON.stringify(weightLog);
+    localStorage.setItem('cutWeight',wj);idbSet('cutWeight',wj);
+    renderWeightSection();
+  }).catch(function(){});
+
+  // FOOD LOGS (alle Tage)
+  sbLoad('food_logs','').then(function(rows){
+    if(!rows) return;
+    var seen={};
+    rows=rows.filter(function(r){if(seen[r.ts])return false;seen[r.ts]=true;return true;});
+    var byDate={};
+    rows.forEach(function(r){
+      if(!byDate[r.log_date])byDate[r.log_date]=[];
+      byDate[r.log_date].push({n:r.name,k:r.kcal,p:r.protein,c:r.carbs,f:r.fat,t:r.meal_type,id:r.ts,sbid:r.id});
+    });
+    Object.keys(byDate).forEach(function(ds){
+      dayKcalCache[ds]=byDate[ds].reduce(function(s,e){return s+(e.k||0);},0);
+      dayLogs[ds]=byDate[ds];
+    });
+    var kcalJson=JSON.stringify(dayKcalCache);
+    localStorage.setItem('cutDayKcal',kcalJson);idbSet('cutDayKcal',kcalJson);
+    if(byDate[today]){
+      logs=byDate[today];
+      var lj=JSON.stringify(logs);
+      localStorage.setItem('cutLogs',lj);idbSet('cutLogs',lj);
+      localStorage.setItem('cutLogDate',today);idbSet('cutLogDate',today);
+    }
+    updateKcalDisplay();
+    if(document.getElementById('log-list'))renderLogList();
+    renderWeekRow();
+  }).catch(function(){});
+
+  // TRAINING LOGS (alle Tage)
+  sbLoad('training_logs','').then(function(rows){
+    if(!rows) return;
+    var seen={};
+    rows=rows.filter(function(r){if(seen[r.ts])return false;seen[r.ts]=true;return true;});
+    var byDate={};
+    rows.forEach(function(r){
+      if(!byDate[r.log_date])byDate[r.log_date]=[];
+      byDate[r.log_date].push({type:r.type,summary:r.summary,fullAnalysis:r.full_analysis,
+        activity:r.activity,dur:r.duration,intensity:r.intensity,
+        note:r.note,date:r.log_date,ts:r.ts,sbid:r.id});
+    });
+    Object.keys(byDate).forEach(function(ds){
+      localStorage.setItem('cutTraining-'+ds,'1');
+      dayTrainings[ds]=byDate[ds];
+    });
+    if(byDate[today]){
+      trainingLogs=byDate[today];
+      var tj=JSON.stringify(trainingLogs);
+      localStorage.setItem('cutTraining',tj);idbSet('cutTraining',tj);
+      idbSet('cutTrainingDate',today);
+    }
+    if(document.getElementById('training-log'))renderTrainingLog();
+    renderWeekRow();
+  }).catch(function(){});
+
+  // TAG-STATUS
+  sbLoad('day_status','').then(function(rows){
+    if(!rows||!rows.length) return;
+    rows.forEach(function(r){dayStatus[r.date]=r.status;});
+    var dj=JSON.stringify(dayStatus);
+    localStorage.setItem('cutDayStatus',dj);idbSet('cutDayStatus',dj);
+    renderWeekRow();
+  }).catch(function(){});
 }
 
 // ═══ API KEY ═══
@@ -1930,14 +1965,20 @@ function addCardio(){
 
 function saveTrainingLogs(){
   var todayLogs=trainingLogs.filter(function(e){return e.date===TODAY;});
-  localStorage.setItem('cutTraining',JSON.stringify(trainingLogs));
+  var tj=JSON.stringify(trainingLogs);
+  localStorage.setItem('cutTraining',tj);
+  idbSet('cutTraining',tj);
+  idbSet('cutTrainingDate',TODAY);
   if(todayLogs.length)localStorage.setItem('cutTraining-'+TODAY,'1');
-  // Neuesten Eintrag in Supabase speichern
-  if(trainingLogs.length){
-    var e=trainingLogs[0];
-    sbSave('training_logs',{user_id:USER_ID,type:e.type,summary:e.summary||'',
-      full_analysis:e.fullAnalysis||'',activity:e.activity||'',duration:e.dur||0,
-      intensity:e.intensity||'',note:e.note||'',log_date:e.date,ts:e.ts});
+  // Supabase: DELETE+INSERT für heute
+  if(SUPABASE_KEY){
+    sbDelete('training_logs','user_id=eq.'+USER_ID+'&log_date=eq.'+TODAY).then(function(){
+      todayLogs.forEach(function(e){
+        sbSave('training_logs',{user_id:USER_ID,type:e.type,summary:e.summary||'',
+          full_analysis:e.fullAnalysis||'',activity:e.activity||'',duration:e.dur||0,
+          intensity:e.intensity||'',note:e.note||'',log_date:e.date,ts:e.ts});
+      });
+    }).catch(function(){});
   }
 }
 
@@ -2034,47 +2075,186 @@ function renderTrainingLog(){
 
 
 function showDayModal(ds,ts){
-  currentDayDs=ds;
+  currentDayDs=ds;dayEditMode=false;
   var d=new Date(ts);
   var dNames=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
   document.getElementById('day-modal-title').textContent=dNames[d.getDay()];
   document.getElementById('day-modal-date').textContent=ds;
   updateDayStatusBtns();
-  var html='';
-  // Kalorien
-  var dLogs=ds===TODAY?logs:[];
+  document.getElementById('day-modal-content').innerHTML='<div style="color:var(--on-dark-mute);font-size:13px;padding:20px 0">Lade…</div>';
+  document.getElementById('day-modal').style.display='flex';
+  document.body.style.overflow='hidden';
+  if(ds===TODAY){
+    dayLogs[ds]=logs.slice();
+    dayTrainings[ds]=trainingLogs.filter(function(e){return e.date===TODAY;});
+    renderDayModalContent();
+  } else if(SUPABASE_KEY){
+    var done={f:false,t:false};
+    function chk(){if(done.f&&done.t)renderDayModalContent();}
+    sbLoad('food_logs','&log_date=eq.'+ds).then(function(rows){
+      dayLogs[ds]=(rows||[]).map(function(r){return{n:r.name,k:r.kcal,p:r.protein,c:r.carbs,f:r.fat,t:r.meal_type,id:r.ts,sbid:r.id};});
+      done.f=true;chk();
+    }).catch(function(){dayLogs[ds]=[];done.f=true;chk();});
+    sbLoad('training_logs','&log_date=eq.'+ds).then(function(rows){
+      dayTrainings[ds]=(rows||[]).map(function(r){return{type:r.type,summary:r.summary,fullAnalysis:r.full_analysis,activity:r.activity,dur:r.duration,intensity:r.intensity,note:r.note,date:r.log_date,ts:r.ts,sbid:r.id};});
+      done.t=true;chk();
+    }).catch(function(){dayTrainings[ds]=[];done.t=true;chk();});
+  } else {
+    dayLogs[ds]=[];dayTrainings[ds]=[];renderDayModalContent();
+  }
+}
+
+function renderDayModalContent(){
+  var ds=currentDayDs;
+  var dLogs=dayLogs[ds]||[];
+  var tLogs=dayTrainings[ds]||[];
+  var eb=dayEditMode?'Fertig':'Bearbeiten';
+  var ec=dayEditMode?'var(--acc-green)':'var(--on-dark-mute)';
+  var html='<div style="display:flex;justify-content:flex-end;margin-bottom:12px">'
+    +'<button id="dm-edit-btn" style="background:transparent;border:1px solid var(--hairline-dark);color:'+ec+';padding:6px 14px;border-radius:var(--r-full);font-size:12px;font-weight:600;cursor:pointer">'+eb+'</button></div>';
+  // Ernährung
   var totK=dLogs.reduce(function(s,e){return s+(e.k||0);},0);
   var totP=dLogs.reduce(function(s,e){return s+(e.p||0);},0);
-  html+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">\u2665 Ern\u00e4hrung</div>';
+  html+='<div style="margin-bottom:16px"><div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">♥ Ernährung</div>';
   if(totK>0){
     var pct=Math.min(100,Math.round(totK/GOAL.kcal*100));
     var kc=totK>GOAL.kcal?'var(--acc-red)':'var(--acc-green)';
-    html+='<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:22px;font-weight:600;color:'+kc+'">'+totK+' kcal</span><span style="font-size:13px;color:var(--on-dark-mute)">/ '+GOAL.kcal+'</span></div>';
-    html+='<div style="height:4px;background:var(--hairline-dark);border-radius:2px;overflow:hidden;margin-bottom:8px"><div style="width:'+pct+'%;height:100%;background:'+kc+';border-radius:2px"></div></div>';
-    html+='<div style="font-size:12px;font-weight:600;color:var(--acc-green)">Protein: '+totP+'g</div>';
-    dLogs.forEach(function(e){
-      html+='<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--hairline-dark);font-size:12px"><span style="color:var(--on-dark-mute)">'+e.n.substring(0,28)+'</span><span style="font-weight:600">'+e.k+' kcal</span></div>';
-    });
-  } else { html+='<div style="font-size:13px;color:var(--on-dark-mute)">Keine Eintr\u00e4ge.</div>'; }
+    html+='<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:20px;font-weight:600;color:'+kc+'">'+totK+' kcal</span><span style="font-size:13px;color:var(--on-dark-mute)">/ '+GOAL.kcal+'</span></div>'
+      +'<div style="height:4px;background:var(--hairline-dark);border-radius:2px;overflow:hidden;margin-bottom:8px"><div style="width:'+pct+'%;height:100%;background:'+kc+';border-radius:2px"></div></div>'
+      +'<div style="font-size:12px;font-weight:600;color:var(--acc-green);margin-bottom:8px">Protein: '+totP+'g</div>';
+  }
+  dLogs.forEach(function(e,idx){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--hairline-dark)">'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+e.n+'</div>'
+      +'<div style="font-size:11px;color:var(--on-dark-mute)">'+(e.t||'')+' P:'+e.p+'g C:'+e.c+'g F:'+e.f+'g</div></div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><span style="font-size:14px;font-weight:600">'+e.k+' kcal</span>'
+      +(dayEditMode?'<button class="dm-del-food" data-idx="'+idx+'" style="background:none;border:none;color:var(--acc-red);cursor:pointer;font-size:20px;padding:0 4px">×</button>':'')
+      +'</div></div>';
+  });
+  if(!dLogs.length) html+='<div style="font-size:13px;color:var(--on-dark-mute)">Keine Einträge.</div>';
+  if(dayEditMode){
+    html+='<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.04);border-radius:var(--r-md)">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mahlzeit hinzufügen</div>'
+      +'<input id="dm-food-name" placeholder="Name" class="inp" style="margin-bottom:6px;height:40px;font-size:13px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">'
+      +'<input id="dm-food-kcal" type="number" placeholder="kcal" class="inp" style="margin:0;height:36px;font-size:12px;text-align:center">'
+      +'<input id="dm-food-p" type="number" placeholder="P(g)" class="inp" style="margin:0;height:36px;font-size:12px;text-align:center">'
+      +'<input id="dm-food-c" type="number" placeholder="C(g)" class="inp" style="margin:0;height:36px;font-size:12px;text-align:center">'
+      +'<input id="dm-food-f" type="number" placeholder="F(g)" class="inp" style="margin:0;height:36px;font-size:12px;text-align:center">'
+      +'</div>'
+      +'<button id="dm-add-food-btn" style="width:100%;padding:10px;background:rgba(255,255,255,.08);color:var(--on-dark);border:none;border-radius:var(--r-full);font-size:13px;font-weight:600;cursor:pointer">+ Eintragen</button></div>';
+  }
   html+='</div>';
   // Training
-  var tLogs=ds===TODAY?trainingLogs.filter(function(e){return e.date===TODAY;}):[];
-  html+='<div><div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">\u25b6 Training</div>';
-  if(tLogs.length){
-    tLogs.forEach(function(e,idx){
-      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--hairline-dark)">';
-      if(e.type==='cardio'){
-        html+='<div><div style="font-size:13px;font-weight:500">'+e.activity.substring(3)+' \u00b7 '+e.dur+' Min.</div><div style="font-size:11px;color:var(--on-dark-mute)">'+e.intensity+'</div></div>';
-      } else {
-        html+='<div><div style="font-size:13px;font-weight:500">Krafttraining</div><div style="font-size:11px;color:var(--on-dark-mute)">'+e.summary.substring(0,40)+'...</div></div>';
-      }
-      html+='<button onclick="deleteTrainingEntry(\'' +ds+ '\','+idx+')" style="background:none;border:none;color:var(--acc-red);cursor:pointer;font-size:20px;padding:4px 8px">\u00d7</button></div>';
-    });
-  } else { html+='<div style="font-size:13px;color:var(--on-dark-mute)">Kein Training eingetragen.</div>'; }
+  html+='<div><div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px">▶ Training</div>';
+  tLogs.forEach(function(e,idx){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--hairline-dark)">';
+    if(e.type==='cardio'){
+      html+='<div><div style="font-size:13px;font-weight:500">'+(e.activity||'').replace(/^../,'')+' · '+e.dur+' Min.</div><div style="font-size:11px;color:var(--on-dark-mute)">'+e.intensity+'</div></div>';
+    } else {
+      html+='<div><div style="font-size:13px;font-weight:500">Krafttraining</div><div style="font-size:11px;color:var(--on-dark-mute)">'+(e.summary||'').substring(0,40)+'</div></div>';
+    }
+    html+=(dayEditMode?'<button class="dm-del-training" data-idx="'+idx+'" style="background:none;border:none;color:var(--acc-red);cursor:pointer;font-size:20px;padding:0 4px">×</button>':'')+'</div>';
+  });
+  if(!tLogs.length) html+='<div style="font-size:13px;color:var(--on-dark-mute)">Kein Training eingetragen.</div>';
+  if(dayEditMode){
+    html+='<div style="margin-top:10px;padding:10px;background:rgba(255,255,255,.04);border-radius:var(--r-md)">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--on-dark-mute);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Training hinzufügen</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">'
+      +'<button id="dm-add-cardio" style="padding:10px;background:rgba(77,232,180,.1);color:var(--acc-green);border:1px solid rgba(77,232,180,.3);border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer">🏃 Cardio</button>'
+      +'<button id="dm-add-kraft" style="padding:10px;background:rgba(255,255,255,.06);color:var(--on-dark);border:1px solid var(--hairline-dark);border-radius:var(--r-md);font-size:13px;font-weight:600;cursor:pointer">💪 Kraft</button>'
+      +'</div><div id="dm-training-form"></div></div>';
+  }
   html+='</div>';
-  document.getElementById('day-modal-content').innerHTML=html;
-  document.getElementById('day-modal').style.display='flex';
-  document.body.style.overflow='hidden';
+  var el=document.getElementById('day-modal-content');
+  el.innerHTML=html;
+  // Event-Listener nach dem Rendern
+  var editBtn=document.getElementById('dm-edit-btn');
+  if(editBtn)editBtn.onclick=function(){toggleDayEdit();};
+  var addFoodBtn=document.getElementById('dm-add-food-btn');
+  if(addFoodBtn)addFoodBtn.onclick=function(){addDayLog(currentDayDs);};
+  var addCardioBtn=document.getElementById('dm-add-cardio');
+  if(addCardioBtn)addCardioBtn.onclick=function(){addDayTraining(currentDayDs,'cardio');};
+  var addKraftBtn=document.getElementById('dm-add-kraft');
+  if(addKraftBtn)addKraftBtn.onclick=function(){addDayTraining(currentDayDs,'kraft');};
+  el.querySelectorAll('.dm-del-food').forEach(function(btn){
+    btn.onclick=function(){deleteDayLog(currentDayDs,parseInt(this.dataset.idx));};
+  });
+  el.querySelectorAll('.dm-del-training').forEach(function(btn){
+    btn.onclick=function(){deleteDayTraining(currentDayDs,parseInt(this.dataset.idx));};
+  });
+}
+
+function toggleDayEdit(){ dayEditMode=!dayEditMode; renderDayModalContent(); }
+
+function deleteDayLog(ds,idx){
+  var list=dayLogs[ds]||[],entry=list[idx];
+  list.splice(idx,1);dayLogs[ds]=list;
+  if(SUPABASE_KEY&&entry.sbid) sbFetch('food_logs','DELETE',null,'?id=eq.'+entry.sbid).catch(function(){});
+  if(ds===TODAY){logs=list.slice();saveLogs();updateKcalDisplay();if(document.getElementById('log-list'))renderLogList();}
+  var totK=list.reduce(function(s,e){return s+(e.k||0);},0);
+  dayKcalCache[ds]=totK;
+  var kj=JSON.stringify(dayKcalCache);localStorage.setItem('cutDayKcal',kj);idbSet('cutDayKcal',kj);
+  renderDayModalContent();renderWeekRow();
+}
+
+function deleteDayTraining(ds,idx){
+  var list=dayTrainings[ds]||[],entry=list[idx];
+  list.splice(idx,1);dayTrainings[ds]=list;
+  if(SUPABASE_KEY&&entry.sbid) sbFetch('training_logs','DELETE',null,'?id=eq.'+entry.sbid).catch(function(){});
+  if(ds===TODAY){trainingLogs=trainingLogs.filter(function(e){return e.date!==TODAY;}).concat(list);saveTrainingLogs();if(document.getElementById('training-log'))renderTrainingLog();}
+  renderDayModalContent();renderWeekRow();
+}
+
+function addDayLog(ds){
+  var nm=document.getElementById('dm-food-name'),kc=document.getElementById('dm-food-kcal'),
+      pp=document.getElementById('dm-food-p'),cc=document.getElementById('dm-food-c'),ff=document.getElementById('dm-food-f');
+  if(!nm||!nm.value.trim()){showToast('Name eingeben');return;}
+  if(!kc||!kc.value){showToast('Kalorien eingeben');return;}
+  var entry={n:nm.value.trim(),k:parseInt(kc.value)||0,p:parseInt(pp&&pp.value)||0,
+             c:parseInt(cc&&cc.value)||0,f:parseInt(ff&&ff.value)||0,t:'Sonstiges',id:Date.now()};
+  if(!dayLogs[ds])dayLogs[ds]=[];
+  dayLogs[ds].unshift(entry);
+  if(SUPABASE_KEY) sbSave('food_logs',{user_id:USER_ID,name:entry.n,kcal:entry.k,protein:entry.p,carbs:entry.c,fat:entry.f,meal_type:entry.t,log_date:ds,ts:entry.id});
+  if(ds===TODAY){logs=dayLogs[ds].slice();saveLogs();updateKcalDisplay();if(document.getElementById('log-list'))renderLogList();}
+  var totK=dayLogs[ds].reduce(function(s,e){return s+(e.k||0);},0);
+  dayKcalCache[ds]=totK;
+  var kj=JSON.stringify(dayKcalCache);localStorage.setItem('cutDayKcal',kj);idbSet('cutDayKcal',kj);
+  renderDayModalContent();renderWeekRow();showToast('Eingetragen ✓');
+}
+
+function addDayTraining(ds,type){
+  var form=document.getElementById('dm-training-form');if(!form)return;
+  if(type==='cardio'){
+    form.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">'
+      +'<input id="dm-t-act" placeholder="Aktivität" class="inp" style="margin:0;height:40px;font-size:12px">'
+      +'<input id="dm-t-dur" type="number" placeholder="Dauer (min)" class="inp" style="margin:0;height:40px;font-size:12px">'
+      +'</div><button id="dm-sv-t" style="width:100%;padding:10px;background:var(--on-dark);color:#000;border:none;border-radius:var(--r-full);font-size:13px;font-weight:600;cursor:pointer">Speichern</button>';
+  } else {
+    form.innerHTML='<textarea id="dm-t-sum" placeholder="Beschreibung" class="inp" style="height:70px;font-size:13px;resize:none;margin-bottom:8px"></textarea>'
+      +'<button id="dm-sv-t" style="width:100%;padding:10px;background:var(--on-dark);color:#000;border:none;border-radius:var(--r-full);font-size:13px;font-weight:600;cursor:pointer">Speichern</button>';
+  }
+  var btn=document.getElementById('dm-sv-t');
+  if(btn) btn.onclick=function(){saveDayTraining(ds,type);};
+}
+
+function saveDayTraining(ds,type){
+  var entry={type:type,date:ds,ts:Date.now()};
+  if(type==='cardio'){
+    var act=document.getElementById('dm-t-act'),dur=document.getElementById('dm-t-dur');
+    if(!act||!act.value.trim()){showToast('Aktivität eingeben');return;}
+    entry.activity=act.value.trim();entry.dur=parseInt(dur&&dur.value)||0;entry.intensity='Moderat';entry.summary=entry.activity+' '+entry.dur+'min';
+  } else {
+    var sum=document.getElementById('dm-t-sum');
+    if(!sum||!sum.value.trim()){showToast('Beschreibung eingeben');return;}
+    entry.summary=sum.value.trim();entry.fullAnalysis=entry.summary;
+  }
+  if(!dayTrainings[ds])dayTrainings[ds]=[];
+  dayTrainings[ds].unshift(entry);
+  if(SUPABASE_KEY) sbSave('training_logs',{user_id:USER_ID,type:entry.type,summary:entry.summary||'',full_analysis:entry.fullAnalysis||'',activity:entry.activity||'',duration:entry.dur||0,intensity:entry.intensity||'',note:'',log_date:ds,ts:entry.ts});
+  if(ds===TODAY){trainingLogs=dayTrainings[ds].concat(trainingLogs.filter(function(e){return e.date!==TODAY;}));saveTrainingLogs();if(document.getElementById('training-log'))renderTrainingLog();}
+  localStorage.setItem('cutTraining-'+ds,'1');
+  renderDayModalContent();renderWeekRow();showToast('Training gespeichert ✓');
 }
 
 function hideDayModal(){
@@ -2279,9 +2459,14 @@ function saveProfile(){
     if(el) PROFIL[id.replace('profil-','')] = el.value;
   });
   var _pj=JSON.stringify(PROFIL);localStorage.setItem('cutProfil',_pj);idbSet('cutProfil',_pj);
-  sbFetch('profiles','POST',{user_id:USER_ID,data:PROFIL},'').catch(function(){
-    sbFetch('profiles','PATCH',{data:PROFIL},'?user_id=eq.'+USER_ID).catch(function(){});
-  });
+  if(SUPABASE_KEY){
+    // UPSERT: erst löschen dann einfügen
+    sbDelete('profiles','user_id=eq.'+USER_ID).then(function(){
+      sbSave('profiles',{user_id:USER_ID,data:PROFIL,updated_at:new Date().toISOString()});
+    }).catch(function(){
+      sbSave('profiles',{user_id:USER_ID,data:PROFIL,updated_at:new Date().toISOString()});
+    });
+  }
   // Ziele live aktualisieren
   if(PROFIL.kcal)    GOAL.kcal    = parseInt(PROFIL.kcal)||2650;
   if(PROFIL.protein) GOAL.p       = parseInt(PROFIL.protein)||200;
@@ -2337,7 +2522,10 @@ function confirmReset(){
 startSplash();
 loadAllKeys(function(){
   initDash();
-  if(SUPABASE_KEY) setTimeout(function(){loadFromSupabase();},1200);
+  if(SUPABASE_KEY){
+    // Sofort laden - kein Delay damit Profil schnell da ist
+    loadFromSupabase();
+  }
   if(!API_KEY||!PROXY_URL) setTimeout(function(){showApiSetup();},3400);
 });
 
@@ -2388,24 +2576,32 @@ function loadAllKeys(cb){
               idbGet('cutWeight',function(wj){
                 idbGet('cutLogs',function(lj){
                   idbGet('cutLogDate',function(ld){
-                    if(ak) API_KEY=ak;
-                    if(pu) PROXY_URL=pu;
-                    if(sk) SUPABASE_KEY=sk;
-                    if(uid){USER_ID=uid;}
-                    else{USER_ID='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);idbSet('cutUserId',USER_ID);}
-                    if(pj){try{
-                      PROFIL=JSON.parse(pj);
-                      if(PROFIL.kcal)GOAL.kcal=parseInt(PROFIL.kcal)||2650;
-                      if(PROFIL.protein)GOAL.p=parseInt(PROFIL.protein)||200;
-                      if(PROFIL.weight)START_WEIGHT=parseFloat(PROFIL.weight)||104;
-                      if(PROFIL.target)TARGET_WEIGHT=parseFloat(PROFIL.target)||90;
-                    }catch(e){}}
-                    if(dj){try{dayStatus=JSON.parse(dj);}catch(e){}}
-                    if(wj){try{weightLog=JSON.parse(wj);}catch(e){}}
-                    // Logs nur laden wenn vom heutigen Tag
-                    var today=new Date().toLocaleDateString('de-DE');
-                    if(lj&&ld===today){try{logs=JSON.parse(lj);}catch(e){}}
-                    if(cb)cb();
+                    idbGet('cutTraining',function(tj){
+                      idbGet('cutTrainingDate',function(td){
+                        if(ak) API_KEY=ak;
+                        if(pu) PROXY_URL=pu;
+                        if(sk) SUPABASE_KEY=sk;
+                        if(uid){USER_ID=uid;}
+                        else{
+                          // Bekannte ID verwenden falls vorhanden
+                          USER_ID='user_1779367734828_lb70vo0';
+                          idbSet('cutUserId',USER_ID);
+                        }
+                        if(pj){try{
+                          PROFIL=JSON.parse(pj);
+                          if(PROFIL.kcal)GOAL.kcal=parseInt(PROFIL.kcal)||2650;
+                          if(PROFIL.protein)GOAL.p=parseInt(PROFIL.protein)||200;
+                          if(PROFIL.weight)START_WEIGHT=parseFloat(PROFIL.weight)||104;
+                          if(PROFIL.target)TARGET_WEIGHT=parseFloat(PROFIL.target)||90;
+                        }catch(e){}}
+                        if(dj){try{dayStatus=JSON.parse(dj);}catch(e){}}
+                        if(wj){try{weightLog=JSON.parse(wj);}catch(e){}}
+                        var today=new Date().toLocaleDateString('de-DE');
+                        if(lj&&ld===today){try{logs=JSON.parse(lj);}catch(e){}}
+                        if(tj&&td===today){try{trainingLogs=JSON.parse(tj);}catch(e){}}
+                        if(cb)cb();
+                      });
+                    });
                   });
                 });
               });
