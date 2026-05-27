@@ -592,6 +592,7 @@ textarea.inp { height: auto; resize: none; line-height: 1.5; }
         <option>⚙️ Crosstrainer</option>
         <option>🚣 Rudermaschine</option>
         <option>🚶 Spazieren gehen</option>
+        <option>🎾 Tennis</option>
       </select>
       <div class="row2">
         <div>
@@ -1919,7 +1920,7 @@ function analyzeWo(){
   btn.disabled=true;spin.classList.add('on');txt.textContent='Analysiere...';
   var messages=[{role:'user',content:[
     {type:'image',source:{type:'base64',media_type:woImgType,data:woImgBase64}},
-    {type:'text',text:'Analysiere diesen Workout-Screenshot. Liste alle Übungen mit Sätzen, Gewichten und Wiederholungen auf. Format: strukturierte Liste auf Deutsch, kompakt. Berechne Gesamtvolumen.'}
+    {type:'text',text:'Analysiere diesen Workout-Screenshot. Liste alle Übungen mit Sätzen, Gewichten und Wiederholungen auf. Format: strukturierte Liste auf Deutsch, kompakt. Berechne Gesamtvolumen (kg). Schätze außerdem die verbrannten Kalorien (Grundlage: Volumen, Übungsauswahl, typische Trainingszeit 45-60 Min.). Zeige am Ende: Geschätzte verbrannte Kalorien: XXX-YYY kcal'}
   ]}];
   fetch(PROXY_URL || 'https://api.anthropic.com/v1/messages',{
     method:'POST',
@@ -2088,19 +2089,35 @@ function showDayModal(ds,ts){
     dayLogs[ds]=logs.slice();
     dayTrainings[ds]=trainingLogs.filter(function(e){return e.date===TODAY;});
     renderDayModalContent();
-  } else if(SUPABASE_KEY){
-    var done={f:false,t:false};
-    function chk(){if(done.f&&done.t)renderDayModalContent();}
-    sbLoad('food_logs','&log_date=eq.'+ds).then(function(rows){
-      dayLogs[ds]=(rows||[]).map(function(r){return{n:r.name,k:r.kcal,p:r.protein,c:r.carbs,f:r.fat,t:r.meal_type,id:r.ts,sbid:r.id};});
-      done.f=true;chk();
-    }).catch(function(){dayLogs[ds]=[];done.f=true;chk();});
-    sbLoad('training_logs','&log_date=eq.'+ds).then(function(rows){
-      dayTrainings[ds]=(rows||[]).map(function(r){return{type:r.type,summary:r.summary,fullAnalysis:r.full_analysis,activity:r.activity,dur:r.duration,intensity:r.intensity,note:r.note,date:r.log_date,ts:r.ts,sbid:r.id};});
-      done.t=true;chk();
-    }).catch(function(){dayTrainings[ds]=[];done.t=true;chk();});
   } else {
-    dayLogs[ds]=[];dayTrainings[ds]=[];renderDayModalContent();
+    // Erst aus Cache (von loadFromSupabase), dann live aus Supabase laden
+    var hasCachedFood = dayLogs[ds] !== undefined;
+    var hasCachedTraining = dayTrainings[ds] !== undefined;
+    if(hasCachedFood && hasCachedTraining){
+      // Bereits geladen beim Start - sofort anzeigen
+      renderDayModalContent();
+    } else if(SUPABASE_KEY){
+      var done={f:hasCachedFood,t:hasCachedTraining};
+      if(!dayLogs[ds]) dayLogs[ds]=[];
+      if(!dayTrainings[ds]) dayTrainings[ds]=[];
+      function chk(){if(done.f&&done.t)renderDayModalContent();}
+      if(!hasCachedFood){
+        sbLoad('food_logs','&log_date=eq.'+ds).then(function(rows){
+          dayLogs[ds]=(rows||[]).map(function(r){return{n:r.name,k:r.kcal,p:r.protein,c:r.carbs,f:r.fat,t:r.meal_type,id:r.ts,sbid:r.id};});
+          done.f=true;chk();
+        }).catch(function(){done.f=true;chk();});
+      }
+      if(!hasCachedTraining){
+        sbLoad('training_logs','&log_date=eq.'+ds).then(function(rows){
+          dayTrainings[ds]=(rows||[]).map(function(r){return{type:r.type,summary:r.summary,fullAnalysis:r.full_analysis,activity:r.activity,dur:r.duration,intensity:r.intensity,note:r.note,date:r.log_date,ts:r.ts,sbid:r.id};});
+          done.t=true;chk();
+        }).catch(function(){done.t=true;chk();});
+      }
+      // Sicherheits-Timeout: nach 5s immer rendern
+      setTimeout(function(){ if(!done.f||!done.t){done.f=true;done.t=true;renderDayModalContent();} },5000);
+    } else {
+      renderDayModalContent();
+    }
   }
 }
 
